@@ -11,7 +11,7 @@ export function StatusCard() {
     })
     const [traffic, setTraffic] = useState(0)
     useEffect(() => {
-        const url = import.meta.env.DEV ? `http://localhost:4444/stream/traffic` : '/stream/traffic'
+        const url = import.meta.env.DEV ? `http://localhost:8080/stream/traffic` : '/stream/traffic'
         const eventSource = new EventSource(url)
 
         eventSource.onopen = () => {

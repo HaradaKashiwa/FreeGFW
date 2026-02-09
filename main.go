@@ -45,7 +45,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "4444"
+		port = "8080"
 	}
 
 	// Channel to listen for OS signals

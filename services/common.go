@@ -18,7 +18,7 @@ func GetMyLink(code string) (string, error) {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "4444"
+		port = "8080"
 	}
 
 	protocol := "http"
