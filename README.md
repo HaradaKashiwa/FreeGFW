@@ -4,6 +4,13 @@ FreeGFW 是一个基于 [Sing-box](https://github.com/sagernet/sing-box) 核心�
 
 FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理系统，让用户可以轻松部署和管理自己的代理服务。让翻墙变得简单，让普通人也可以轻松使用代理服务。
 
+## 📸 截图预览
+
+<div style="display: flex; justify-content: space-between;">
+  <img src=".github/images/1.png" style="width: 48%; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); border-radius: 10px;" />
+  <img src=".github/images/2.png" style="width: 48%; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); border-radius: 10px;" />
+</div>
+
 ## ✨ 主要特性
 
 - 🚀 **高性能核心**: 基于 Sing-box 构建，支持最新的代理协议和特性。
