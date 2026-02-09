@@ -103,7 +103,7 @@ export function UserManageCard() {
                             <div className='flex-1 flex items-center gap-4'>
                                 <img src={`https://avatar.vercel.sh/${user.username}`} className='w-8 h-8 rounded-full' />
                                 <div>
-                                    <div className='font-bold'>{user.username}</div>
+                                    <div>{user.username}</div>
                                 </div>
                             </div>
                             <div className='w-32 text-xs opacity-70 text-center flex flex-col justify-center'>

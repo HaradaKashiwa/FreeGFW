@@ -18,6 +18,9 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 
 ### Docker 部署
 
+docker run -d --name freegfw --network=host \
+  -v "data:/data" \
+  ghcr.io/haradakashiwa/freegfw
 
 ## 📝 配置说明
 
