@@ -41,9 +41,9 @@ graph TD
     User([用户设备])
     
     subgraph "FreeGFW 互联网络"
-        NodeA[节点 A (美国)]
-        NodeB[节点 B (香港)]
-        NodeC[节点 C (日本)]
+        NodeA["节点 A (美国)"]
+        NodeB["节点 B (香港)"]
+        NodeC["节点 C (日本)"]
         
         NodeA <== 自动同步 ==> NodeB
         NodeB <== 自动同步 ==> NodeC
