@@ -1,0 +1,18 @@
+{
+    "_name": "Shadowsocks AES-256-GCM",
+    "_description": "始于2013年，最常见的翻墙协议，兼顾性能与安全性。",
+    "server": {
+        "type": "shadowsocks",
+        "listen": "::",
+        "listen_port": 1080,
+        "method": "aes-256-gcm",
+        "password": "password"
+    },
+    "client": {
+        "type": "shadowsocks",
+        "server_port": 1080,
+        "server": "127.0.0.1",
+        "method": "aes-256-gcm",
+        "password": "password"
+    }
+}

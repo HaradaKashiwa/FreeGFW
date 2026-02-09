@@ -1,0 +1,15 @@
+{
+    "_name": "Vmess TCP AEAD",
+    "_description": "Vmess TCP AEAD 协议。",
+    "server": {
+        "type": "vmess",
+        "listen": "::",
+        "listen_port": 1080
+    },
+    "client": {
+        "type": "vmess",
+        "server_port": 1080,
+        "server": "127.0.0.1",
+        "alter_id": 0
+    }
+}

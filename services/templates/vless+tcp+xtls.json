@@ -1,0 +1,26 @@
+{
+    "_name": "VLESS TCP XTLS Vision",
+    "_description": "VLESS TCP XTLS Vision 协议。",
+    "server": {
+        "type": "vless",
+        "listen": "::",
+        "listen_port": 443,
+        "flow": "xtls-rprx-vision",
+        "tls": {
+            "enabled": true
+        }
+    },
+    "client": {
+        "type": "vless",
+        "server_port": 443,
+        "server": "127.0.0.1",
+        "flow": "xtls-rprx-vision",
+        "tls": {
+            "enabled": true,
+            "utls": {
+                "enabled": true,
+                "fingerprint": "chrome"
+            }
+        }
+    }
+}

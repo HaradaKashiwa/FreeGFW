@@ -1,0 +1,21 @@
+{
+    "_name": "Vmess TCP AEAD TLS",
+    "_description": "Vmess TCP AEAD TLS 协议。",
+    "server": {
+        "type": "vmess",
+        "listen": "::",
+        "listen_port": 1080,
+        "tls": {
+            "enabled": true
+        }
+    },
+    "client": {
+        "type": "vmess",
+        "server_port": 1080,
+        "server": "127.0.0.1",
+        "alter_id": 0,
+        "tls": {
+            "enabled": true
+        }
+    }
+}

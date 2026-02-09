@@ -1,0 +1,35 @@
+{
+    "_name": "Hysteria2",
+    "_description": "Hysteria2 协议",
+    "server": {
+        "type": "hysteria2",
+        "listen": "::",
+        "listen_port": 443,
+        "up_mbps": 1000,
+        "down_mbps": 1000,
+        "ignore_client_bandwidth": false,
+        "tls": {
+            "enabled": true,
+            "alpn": [
+                "h3"
+            ]
+        }
+    },
+    "client": {
+        "type": "hysteria2",
+        "server_port": 443,
+        "server": "127.0.0.1",
+        "up_mbps": 1000,
+        "down_mbps": 1000,
+        "tls": {
+            "enabled": true,
+            "utls": {
+                "enabled": true,
+                "fingerprint": "chrome"
+            },
+            "alpn": [
+                "h3"
+            ]
+        }
+    }
+}
