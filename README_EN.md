@@ -10,8 +10,7 @@ FreeGFW aims to provide a simple, powerful proxy management system, making it ea
 ## 📸 Screenshots
 
 <div>
-  <img src=".github/images/1.png" style="width: 100%; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); border-radius: 10px;" />
-  <img src=".github/images/2.png" style="width: 100%; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); border-radius: 10px;" />
+  <img src=".github/images/en.png" style="width: 100%; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); border-radius: 10px;" />
 </div>
 
 ## ✨ Key Features

@@ -90,10 +90,10 @@ export function UserManageCard() {
                     <div className='flex-1 flex items-center gap-2'>
                         {t('user')}
                     </div>
-                    <div className='w-32 text-center'>
+                    <div className='flex-1'>
                         {t('traffic')}
                     </div>
-                    <div className="w-32 text-end pe-4">
+                    <div className="flex-1 text-end pe-4">
                         {t('actions')}
                     </div>
                 </div>
@@ -108,12 +108,12 @@ export function UserManageCard() {
                                     <div>{user.username}</div>
                                 </div>
                             </div>
-                            <div className='w-32 text-xs opacity-70 text-center flex flex-col justify-center'>
+                            <div className='flex-1 text-xs opacity-70 flex flex-col justify-center'>
                                 <div dir="ltr">↑ {formatBytes(user.upload || 0)}</div>
                                 <div dir="ltr">↓ {formatBytes(user.download || 0)}</div>
                             </div>
-                            <div className="flex w-32 justify-center gap-2">
-                                <Button size='sm' variant='outline' className='cursor-pointer w-20 px-0' onClick={() => setQrCodeUser(user)}><IoQrCode /> {t('connect_code')}</Button>
+                            <div className="flex-1 flex justify-end gap-2">
+                                <Button size='sm' variant='outline' className='cursor-pointer px-0' onClick={() => setQrCodeUser(user)}><IoQrCode /> <span className='hidden md:block'>{t('connect_code')}</span></Button>
                                 <Button size='sm' variant='destructive' className='cursor-pointer px-2' onClick={() => setPreDeleteUser(user)}><IoTrashBin /></Button>
                             </div>
                         </div>
