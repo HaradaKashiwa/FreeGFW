@@ -9,7 +9,7 @@ import (
 	"time"
 
 	box "github.com/sagernet/sing-box"
-	_ "github.com/sagernet/sing-box/include"
+	"github.com/sagernet/sing-box/include"
 	"github.com/sagernet/sing-box/option"
 
 	"github.com/sagernet/sing-box/experimental/clashapi/trafficontrol"
@@ -145,14 +145,15 @@ func (c *CoreService) Start() error {
 	}
 
 	// Singbox Start
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx = include.Context(ctx)
+	c.cancel = cancel
+
 	var options option.Options
-	if err := json.Unmarshal(c.ConfigContent, &options); err != nil {
+	if err := options.UnmarshalJSONContext(ctx, c.ConfigContent); err != nil {
 		log.Println("Failed to parse singbox config:", err)
 		return err
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	c.cancel = cancel
 
 	instance, err := box.New(box.Options{
 		Context: ctx,
