@@ -103,6 +103,9 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 		if flow, ok := u["flow"]; ok {
 			xu["flow"] = flow
 		}
+		if name, ok := u["name"]; ok {
+			xu["email"] = name
+		}
 		xrayUsers = append(xrayUsers, xu)
 	}
 
@@ -118,6 +121,7 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 	// Build Xray Config (Simplified for JSON loader)
 	// Note: Xray's JSON format expected by serial.LoadJSONConfig is standard Xray config
 	inbound := map[string]interface{}{
+		"tag":      "proxy",
 		"port":     port,
 		"protocol": "vless",
 		"settings": map[string]interface{}{
@@ -140,6 +144,22 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 			},
 		},
 	}
+
+	// Add stats and policy
+	policy := map[string]interface{}{
+		"levels": map[string]interface{}{
+			"0": map[string]interface{}{
+				"statsUserUplink":   true,
+				"statsUserDownlink": true,
+			},
+		},
+		"system": map[string]interface{}{
+			"statsInboundUplink":   true,
+			"statsInboundDownlink": true,
+		},
+	}
+
+	stats := map[string]interface{}{}
 
 	// Updates from config
 	if transport != nil {
@@ -179,6 +199,8 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 	}
 
 	config := map[string]interface{}{
+		"stats":    stats,
+		"policy":   policy,
 		"inbounds": []interface{}{inbound},
 		"outbounds": []interface{}{
 			map[string]interface{}{
