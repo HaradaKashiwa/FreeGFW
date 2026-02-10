@@ -27,7 +27,7 @@ func main() {
 
 	services.InitSSEHub()
 
-	services.ConnectSingboxAndBroadcast()
+	services.StartMonitoring()
 	go services.StartSyncLoop()
 	go services.StartCertificateRenewalLoop()
 

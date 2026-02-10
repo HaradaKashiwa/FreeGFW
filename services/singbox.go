@@ -2,43 +2,53 @@ package services
 
 import (
 	"encoding/json"
-	"freegfw/database"
-	"freegfw/models"
-	"log"
+	"strings"
 	"time"
 
-	xray_core "github.com/xtls/xray-core/core"
-	"github.com/xtls/xray-core/features/stats"
+	"freegfw/database"
+	"freegfw/models"
 )
 
-func ConnectSingboxAndBroadcast() {
-	go monitorDirectly()
-}
+func (c *CoreService) refreshSingbox(server map[string]interface{}, templateName string) error {
+	// Existing Logic
+	delete(server, "flow")
 
-func monitorDirectly() {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered from monitorDirectly panic:", r)
-			time.Sleep(3 * time.Second)
-			go monitorDirectly()
-		}
-	}()
-
-	for {
-		if coreInstance == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		if coreInstance.CurrentEngine == "xray" {
-			if coreInstance.xrayInstance != nil {
-				monitorXrayLoop(coreInstance.xrayInstance)
+	if tlsConfig, ok := server["tls"].(map[string]interface{}); ok {
+		if reality, ok := tlsConfig["reality"].(map[string]interface{}); ok {
+			if pk, ok := reality["private_key"].(string); ok {
+				reality["private_key"] = strings.TrimRight(pk, "=")
 			}
-		} else {
-			monitorSingboxLoop()
+			delete(reality, "public_key")
 		}
-		time.Sleep(1 * time.Second)
 	}
+
+	users, _ := BuildUsers(templateName)
+	tls, _ := BuildServerTLS(templateName)
+
+	server["users"] = users
+	if tls != nil {
+		if serverTls, ok := server["tls"].(map[string]interface{}); ok {
+			for k, v := range tls {
+				serverTls[k] = v
+			}
+		}
+	}
+
+	config := map[string]interface{}{
+		"inbounds": []map[string]interface{}{server},
+		"outbounds": []map[string]interface{}{
+			{"type": "direct", "tag": "direct"},
+		},
+		"experimental": map[string]interface{}{
+			"clash_api": map[string]interface{}{
+				"external_controller": "127.0.0.1:0",
+			},
+		},
+	}
+
+	data, _ := json.MarshalIndent(config, "", "  ")
+	c.ConfigContent = data
+	return nil
 }
 
 func monitorSingboxLoop() {
@@ -234,140 +244,4 @@ func monitorSingboxLoop() {
 
 		ticker.Stop()
 	}
-}
-
-func monitorXrayLoop(instance *xray_core.Instance) {
-	v := instance.GetFeature(stats.ManagerType())
-	if v == nil {
-		return
-	}
-	mgr := v.(stats.Manager)
-
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	userTraffic := make(map[string]struct{ Up, Down int64 })
-	var flushCounter int
-	lastStats := make(map[string]int64)
-	currentEngine := coreInstance.CurrentEngine
-
-	for range ticker.C {
-		if coreInstance.xrayInstance != instance || coreInstance.CurrentEngine != currentEngine {
-			return
-		}
-
-		var users []models.User
-		database.DB.Find(&users)
-
-		var links []models.Link
-		database.DB.Where("last_sync_status = ?", "success").Find(&links)
-
-		allNames := []string{}
-		for _, u := range users {
-			allNames = append(allNames, u.Username)
-		}
-		for _, l := range links {
-			var lUsers []string
-			json.Unmarshal(l.Users, &lUsers)
-			allNames = append(allNames, lUsers...)
-		}
-		allNames = append(allNames, "default")
-
-		totalUp := int64(0)
-		totalDown := int64(0)
-
-		diffUpTotal := int64(0)
-		diffDownTotal := int64(0)
-
-		processedUsers := make(map[string]bool)
-
-		for _, name := range allNames {
-			if name == "" || processedUsers[name] {
-				continue
-			}
-			processedUsers[name] = true
-
-			upName := "user>>>" + name + ">>>traffic>>>uplink"
-			downName := "user>>>" + name + ">>>traffic>>>downlink"
-
-			cUp := getCounterVal(mgr, upName)
-			cDown := getCounterVal(mgr, downName)
-
-			if cUp > 0 || cDown > 0 {
-				totalUp += cUp
-				totalDown += cDown
-
-				prevUp, okUp := lastStats[upName]
-				prevDown, okDown := lastStats[downName]
-
-				if !okUp || !okDown {
-					lastStats[upName] = cUp
-					lastStats[downName] = cDown
-					continue
-				}
-
-				dUp := cUp - prevUp
-				dDown := cDown - prevDown
-
-				if dUp < 0 {
-					dUp = 0
-				}
-				if dDown < 0 {
-					dDown = 0
-				}
-
-				diffUpTotal += dUp
-				diffDownTotal += dDown
-
-				lastStats[upName] = cUp
-				lastStats[downName] = cDown
-
-				uT := userTraffic[name]
-				uT.Up += dUp
-				uT.Down += dDown
-				userTraffic[name] = uT
-			}
-		}
-
-		if Hub != nil {
-			speed := map[string]float64{
-				"up":   float64(diffUpTotal) * 8 / 1000000,
-				"down": float64(diffDownTotal) * 8 / 1000000,
-			}
-			Hub.Broadcast("speed", speed)
-
-			total := map[string]int64{
-				"up":   totalUp,
-				"down": totalDown,
-			}
-			Hub.Broadcast("traffic", total)
-
-			Hub.Broadcast("connections", map[string]interface{}{"connections": []interface{}{}})
-		}
-
-		flushCounter++
-		if flushCounter >= 10 {
-			for name, traffic := range userTraffic {
-				if traffic.Up > 0 || traffic.Down > 0 {
-					var user models.User
-					if err := database.DB.Where("uuid = ?", name).Or("username = ?", name).First(&user).Error; err == nil {
-						database.DB.Model(&user).Updates(map[string]interface{}{
-							"upload":   user.Upload + traffic.Up,
-							"download": user.Download + traffic.Down,
-						})
-					}
-				}
-			}
-			userTraffic = make(map[string]struct{ Up, Down int64 })
-			flushCounter = 0
-		}
-	}
-}
-
-func getCounterVal(mgr stats.Manager, name string) int64 {
-	c := mgr.GetCounter(name)
-	if c != nil {
-		return c.Value()
-	}
-	return 0
 }
