@@ -23,7 +23,7 @@
         },
         "transport": {
             "type": "xhttp",
-            "path": "/cdn-cgi/trace"
+            "path": "/robots.txt"
         }
     },
     "client": {
@@ -45,7 +45,7 @@
         },
         "transport": {
             "type": "xhttp",
-            "path": "/cdn-cgi/trace"
+            "path": "/robots.txt"
         }
     }
 }
