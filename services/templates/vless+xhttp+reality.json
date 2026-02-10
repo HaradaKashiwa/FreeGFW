@@ -1,0 +1,51 @@
+{
+    "_name": "VLESS XHTTP REALITY",
+    "_description": "VLESS XHTTP REALITY 协议。私钥、公钥和 shortId 会自动生成，无需手动填写。",
+    "_core": "xray",
+    "server": {
+        "type": "vless",
+        "listen": "::",
+        "listen_port": 443,
+        "tls": {
+            "enabled": true,
+            "server_name": "www.microsoft.com",
+            "reality": {
+                "enabled": true,
+                "handshake": {
+                    "server": "www.microsoft.com",
+                    "server_port": 443
+                },
+                "private_key": "",
+                "short_id": [
+                    ""
+                ]
+            }
+        },
+        "transport": {
+            "type": "http",
+            "path": "/xhttp"
+        }
+    },
+    "client": {
+        "type": "vless",
+        "server_port": 443,
+        "server": "127.0.0.1",
+        "tls": {
+            "enabled": true,
+            "server_name": "www.microsoft.com",
+            "reality": {
+                "enabled": true,
+                "public_key": "",
+                "short_id": ""
+            },
+            "utls": {
+                "enabled": true,
+                "fingerprint": "chrome"
+            }
+        },
+        "transport": {
+            "type": "http",
+            "path": "/xhttp"
+        }
+    }
+}

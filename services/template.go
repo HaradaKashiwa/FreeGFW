@@ -25,17 +25,18 @@ import (
 	"freegfw/utils"
 )
 
-type TemplateConfig struct {
-	Name        string                 `json:"_name"`
-	Description string                 `json:"_description"`
-	Server      map[string]interface{} `json:"server"`
-	Client      map[string]interface{} `json:"client"`
-}
-
 type TemplateInfo struct {
 	Type        string `json:"type"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+type TemplateConfig struct {
+	Name        string                 `json:"_name"`
+	Description string                 `json:"_description"`
+	Core        interface{}            `json:"_core"`
+	Server      map[string]interface{} `json:"server"`
+	Client      map[string]interface{} `json:"client"`
 }
 
 // GetIPv4 fetches public IPv4

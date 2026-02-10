@@ -289,6 +289,27 @@ h1 { font-size: 1.5rem; margin-bottom: 2rem; color: #1a1a1a; font-weight: 700; }
 		case "vless":
 			// vless://uuid@ip:port?security=reality&sni=...&fp=...&type=tcp&headerType=none#title
 			flowVal, _ := server["flow"].(string)
+			transport, _ := server["transport"].(map[string]interface{})
+			netType := "tcp" // default
+			path := ""
+			host := ""
+
+			if transport != nil {
+				if t, ok := transport["type"].(string); ok && t != "" {
+					netType = t
+				}
+				if p, ok := transport["path"].(string); ok && p != "" {
+					path = p
+				}
+				if h, ok := transport["host"].(string); ok && h != "" {
+					host = h
+				} else if hVal, ok := transport["host"].([]interface{}); ok && len(hVal) > 0 {
+					if s, ok := hVal[0].(string); ok {
+						host = s
+					}
+				}
+			}
+
 			params := []string{}
 			if isTLS {
 				if isReality {
@@ -311,7 +332,13 @@ h1 { font-size: 1.5rem; margin-bottom: 2rem; color: #1a1a1a; font-weight: 700; }
 			} else {
 				params = append(params, "security=none")
 			}
-			params = append(params, "type=tcp")
+			params = append(params, "type="+netType)
+			if path != "" {
+				params = append(params, "path="+url.QueryEscape(path))
+			}
+			if host != "" {
+				params = append(params, "host="+url.QueryEscape(host))
+			}
 
 			link = fmt.Sprintf("vless://%s@%s:%s?%s#%s", uuid, hostname, port, strings.Join(params, "&"), titleAlias)
 
