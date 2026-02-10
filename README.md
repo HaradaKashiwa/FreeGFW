@@ -29,7 +29,7 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 
 ```bash
 docker run -d --name freegfw --network=host \
-  -v "data:/data" \
+  -v "freegfw:/data" \
   ghcr.io/haradakashiwa/freegfw
 ```
 

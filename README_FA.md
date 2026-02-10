@@ -29,7 +29,7 @@ FreeGFW یک سیستم مدیریت سرویس پروکسی با کارایی �
 
 ```bash
 docker run -d --name freegfw --network=host \
-  -v "data:/data" \
+  -v "freegfw:/data" \
   ghcr.io/haradakashiwa/freegfw
 ```
 

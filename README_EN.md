@@ -29,7 +29,7 @@ FreeGFW aims to provide a simple, powerful proxy management system, making it ea
 
 ```bash
 docker run -d --name freegfw --network=host \
-  -v "data:/data" \
+  -v "freegfw:/data" \
   ghcr.io/haradakashiwa/freegfw
 ```
 
