@@ -11,9 +11,50 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+type RateLimiter struct {
+	mu       sync.Mutex
+	attempts map[string][]time.Time
+}
+
+var limiter = &RateLimiter{
+	attempts: make(map[string][]time.Time),
+}
+
+func (r *RateLimiter) Allow(ip string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Filter timestamps within 10 minutes
+	now := time.Now()
+	var validAttempts []time.Time
+	for _, t := range r.attempts[ip] {
+		if now.Sub(t) < 10*time.Minute {
+			validAttempts = append(validAttempts, t)
+		}
+	}
+	r.attempts[ip] = validAttempts
+
+	// Block if there are 3 or more failed attempts
+	return len(validAttempts) < 3
+}
+
+func (r *RateLimiter) Record(ip string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.attempts[ip] = append(r.attempts[ip], time.Now())
+}
+
+func (r *RateLimiter) Reset(ip string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.attempts, ip)
+}
 
 func SetupRouter(staticFS fs.FS) *gin.Engine {
 	r := gin.Default()
@@ -61,26 +102,31 @@ func SetupRouter(staticFS fs.FS) *gin.Engine {
 
 	r.POST("/link/:code", controllers.BindLink)
 	r.GET("/subscribe/:uuid", controllers.GetSubscribe)
-	r.GET("/stream/traffic", gin.WrapF(services.ServeSSE))
 
-	// Static file serving from embedded FS
-	r.StaticFileFS("/favicon.ico", "favicon.ico", http.FS(staticFS))
-	r.StaticFileFS("/logo.svg", "logo.svg", http.FS(staticFS))
+	// Authorized group for frontend and internal operations
+	authorized := r.Group("/")
+	authorized.Use(AuthMiddleware())
+	{
+		authorized.GET("/stream/traffic", gin.WrapF(services.ServeSSE))
 
-	if assetsFS, err := fs.Sub(staticFS, "assets"); err == nil {
-		r.StaticFS("/assets", http.FS(assetsFS))
+		// Static file serving from embedded FS
+		authorized.StaticFileFS("/favicon.ico", "favicon.ico", http.FS(staticFS))
+		authorized.StaticFileFS("/logo.svg", "logo.svg", http.FS(staticFS))
+
+		if assetsFS, err := fs.Sub(staticFS, "assets"); err == nil {
+			authorized.StaticFS("/assets", http.FS(assetsFS))
+		}
+		if imagesFS, err := fs.Sub(staticFS, "images"); err == nil {
+			authorized.StaticFS("/images", http.FS(imagesFS))
+		}
+
+		// Serve index for root
+		authorized.GET("/", func(c *gin.Context) {
+			c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
+		})
 	}
-	if imagesFS, err := fs.Sub(staticFS, "images"); err == nil {
-		r.StaticFS("/images", http.FS(imagesFS))
-	}
 
-	// Serve index for root and fallback
-	// Serve index for root
-	r.GET("/", func(c *gin.Context) {
-		c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
-	})
-
-	r.NoRoute(func(c *gin.Context) {
+	r.NoRoute(AuthMiddleware(), func(c *gin.Context) {
 		path := c.Request.URL.Path
 		// If it looks like an API call or static asset but didn't match, return 404
 		if strings.HasPrefix(path, "/api") ||
@@ -122,10 +168,16 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		clientIP := c.ClientIP()
+		if !limiter.Allow(clientIP) {
+			c.AbortWithStatus(http.StatusTooManyRequests)
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.Header("WWW-Authenticate", `Basic realm="Protected"`)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
@@ -143,13 +195,15 @@ func AuthMiddleware() gin.HandlerFunc {
 				json.Unmarshal(pSetting.Value, &storedPass)
 
 				if pair[0] == storedUser && pair[1] == storedPass {
+					limiter.Reset(clientIP)
 					c.Next()
 					return
 				}
 			}
 		}
 
+		limiter.Record(clientIP)
 		c.Header("WWW-Authenticate", `Basic realm="Protected"`)
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
