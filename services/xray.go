@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"freegfw/database"
@@ -135,8 +134,6 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 
 	data, _ := json.MarshalIndent(config, "", "  ")
 	c.ConfigContent = data
-	// Also write to file for debugging if needed
-	os.WriteFile("data/config.json", data, 0644)
 	return nil
 }
 
