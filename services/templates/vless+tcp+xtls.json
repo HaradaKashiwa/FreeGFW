@@ -1,6 +1,7 @@
 {
     "_name": "VLESS TCP XTLS Vision",
     "_description": "VLESS TCP XTLS Vision 协议。",
+    "_core": "xray",
     "server": {
         "type": "vless",
         "listen": "::",

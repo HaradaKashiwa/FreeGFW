@@ -41,8 +41,102 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 		port = int(p)
 	}
 
-	// Build Xray Config (Simplified for JSON loader)
-	// Note: Xray's JSON format expected by serial.LoadJSONConfig is standard Xray config
+	// Build stream settings
+	streamSettings := map[string]interface{}{
+		"network": "tcp",
+	}
+
+	if transport != nil {
+		if t, ok := transport["type"].(string); ok {
+			streamSettings["network"] = t
+		}
+	}
+
+	network, _ := streamSettings["network"].(string)
+
+	if network == "xhttp" {
+		path := "/xhttp" // Default
+		if transport != nil {
+			if p, ok := transport["path"].(string); ok {
+				path = p
+			}
+		}
+		streamSettings["xhttpSettings"] = map[string]interface{}{
+			"path": path,
+		}
+	}
+
+	// Security settings
+	isReality := false
+	if reality != nil {
+		if enabled, ok := reality["enabled"].(bool); ok && enabled {
+			isReality = true
+		}
+	}
+
+	isTLS := false
+	if tlsConfig != nil {
+		if enabled, ok := tlsConfig["enabled"].(bool); ok && enabled {
+			isTLS = true
+		}
+	}
+
+	if isReality {
+		streamSettings["security"] = "reality"
+		rSettings := map[string]interface{}{
+			"show":        false,
+			"dest":        "www.microsoft.com:443", // Default
+			"xver":        0,
+			"serverNames": []string{"www.microsoft.com"}, // Default
+		}
+
+		if pk, ok := reality["private_key"].(string); ok {
+			rSettings["privateKey"] = pk
+		}
+		if sids, ok := reality["short_id"].([]interface{}); ok {
+			newSids := []string{}
+			for _, sid := range sids {
+				if s, ok := sid.(string); ok {
+					newSids = append(newSids, s)
+				}
+			}
+			rSettings["shortIds"] = newSids
+		}
+		if sni, ok := tlsConfig["server_name"].(string); ok {
+			rSettings["serverNames"] = []string{sni}
+		}
+
+		if handshake, ok := reality["handshake"].(map[string]interface{}); ok {
+			server := "www.microsoft.com"
+			port := "443"
+			if s, ok := handshake["server"].(string); ok {
+				server = s
+			}
+			if p, ok := handshake["server_port"].(float64); ok {
+				port = fmt.Sprintf("%d", int(p))
+			}
+			rSettings["dest"] = server + ":" + port
+		}
+		streamSettings["realitySettings"] = rSettings
+
+	} else if isTLS {
+		streamSettings["security"] = "tls"
+
+		ts, err := BuildServerTLS(templateName)
+		if err == nil && ts != nil {
+			certEntry := map[string]interface{}{
+				"certificate": ts["certificate"],
+				"key":         ts["key"],
+			}
+			streamSettings["tlsSettings"] = map[string]interface{}{
+				"certificates": []interface{}{certEntry},
+			}
+		}
+	} else {
+		streamSettings["security"] = "none"
+	}
+
+	// Inbound Config
 	inbound := map[string]interface{}{
 		"tag":      "proxy",
 		"port":     port,
@@ -51,21 +145,7 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 			"clients":    xrayUsers,
 			"decryption": "none",
 		},
-		"streamSettings": map[string]interface{}{
-			"network": "xhttp",
-			"xhttpSettings": map[string]interface{}{
-				"path": "/xhttp", // Default
-			},
-			"security": "reality",
-			"realitySettings": map[string]interface{}{
-				"show":        false,
-				"dest":        "www.microsoft.com:443",
-				"xver":        0,
-				"serverNames": []string{"www.microsoft.com"},
-				"privateKey":  "",
-				"shortIds":    []string{""},
-			},
-		},
+		"streamSettings": streamSettings,
 	}
 
 	// Add stats and policy
@@ -83,43 +163,6 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 	}
 
 	stats := map[string]interface{}{}
-
-	// Updates from config
-	if transport != nil {
-		if path, ok := transport["path"].(string); ok {
-			inbound["streamSettings"].(map[string]interface{})["xhttpSettings"].(map[string]interface{})["path"] = path
-		}
-	}
-
-	if reality != nil {
-		rSettings := inbound["streamSettings"].(map[string]interface{})["realitySettings"].(map[string]interface{})
-		if pk, ok := reality["private_key"].(string); ok {
-			rSettings["privateKey"] = pk
-		}
-		if sids, ok := reality["short_id"].([]interface{}); ok {
-			newSids := []string{}
-			for _, sid := range sids {
-				if s, ok := sid.(string); ok {
-					newSids = append(newSids, s)
-				}
-			}
-			rSettings["shortIds"] = newSids
-		}
-		if sni, ok := tlsConfig["server_name"].(string); ok {
-			rSettings["serverNames"] = []string{sni}
-		}
-		if handshake, ok := reality["handshake"].(map[string]interface{}); ok {
-			server := "www.microsoft.com"
-			port := "443"
-			if s, ok := handshake["server"].(string); ok {
-				server = s
-			}
-			if p, ok := handshake["server_port"].(float64); ok {
-				port = fmt.Sprintf("%d", int(p))
-			}
-			rSettings["dest"] = server + ":" + port
-		}
-	}
 
 	config := map[string]interface{}{
 		"stats":    stats,

@@ -22,8 +22,8 @@
             }
         },
         "transport": {
-            "type": "http",
-            "path": "/xhttp"
+            "type": "xhttp",
+            "path": "/cdn-cgi/trace"
         }
     },
     "client": {
@@ -44,8 +44,8 @@
             }
         },
         "transport": {
-            "type": "http",
-            "path": "/xhttp"
+            "type": "xhttp",
+            "path": "/cdn-cgi/trace"
         }
     }
 }

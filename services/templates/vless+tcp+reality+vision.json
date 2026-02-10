@@ -1,6 +1,7 @@
 {
     "_name": "VLESS TCP REALITY Vision",
     "_description": "VLESS TCP REALITY Vision 协议。私钥、公钥和 shortId 会自动生成，无需手动填写。",
+    "_core": "xray",
     "server": {
         "type": "vless",
         "listen": "::",
