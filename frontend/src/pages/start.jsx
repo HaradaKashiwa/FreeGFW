@@ -7,10 +7,12 @@ import { Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { LetsEncrypt } from './start/letsencrypt'
 import { Button } from '@/components/ui/button'
+import { useLanguageStore } from '../store/useLanguageStore'
 
 export default function Start() {
     const { step, setStep } = useStartStore()
     const { data: config } = useGetConfigs()
+    const { t } = useLanguageStore()
     useEffect(() => {
         if (!config?.ssl) {
             setStep('letsencrypt')
@@ -29,8 +31,8 @@ export default function Start() {
     }
     return (
         <div className='max-w-2xl mx-auto px-2'>
-            <div className='mt-8 text-2xl'>👋 第一次来吗？</div>
-            <div className='text-sm mt-2 opacity-70'>从这里开始部署你的FreeGFW</div>
+            <div className='mt-8 text-2xl'>{t('first_time_here')}</div>
+            <div className='text-sm mt-2 opacity-70'>{t('start_deploying')}</div>
 
             {steps[step]}
         </div>

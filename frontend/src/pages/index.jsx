@@ -6,24 +6,27 @@ import { Button } from "../components/ui/button";
 import { Modal } from "../components/Modal";
 import { SettingsCard } from "../components/SettingsCard";
 import { LetsEncrypt } from "./start/letsencrypt";
+import { useLanguageStore } from "../store/useLanguageStore";
+
 export default function Index() {
     const { data: config, loaded } = useGetConfigs()
+    const { t } = useLanguageStore()
     return (
         <div className='grid grid-cols-1 gap-4'>
             {loaded && !config?.ssl && (
                 <div className='bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/20'>
                     <div className='flex items-center justify-between'>
                         <div>
-                            <div className='text-lg'>SSL 证书未配置</div>
-                            <div className='text-sm opacity-70'>请先配置 SSL 证书以加密你的连接，如未配置您的连接信息可能会被政府或中间人窃取。</div>
+                            <div className='text-lg'>{t('ssl_not_configured')}</div>
+                            <div className='text-sm opacity-70'>{t('ssl_warning_index')}</div>
                         </div>
                         <Modal
                             content={(
                                 <LetsEncrypt />
                             )}
-                            title={'配置 SSL'}
+                            title={t('configure_ssl')}
                         >
-                            <Button variant='outline' className='cursor-pointer rounded-full bg-yellow-500 hover:bg-yellow-500/80'>配置 SSL</Button>
+                            <Button variant='outline' className='cursor-pointer rounded-full bg-yellow-500 hover:bg-yellow-500/80'>{t('configure_ssl')}</Button>
                         </Modal>
                     </div>
                 </div>
@@ -31,16 +34,16 @@ export default function Index() {
             {loaded && !config?.has_password && (
                 <div className='bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/20 flex items-center justify-between'>
                     <div>
-                        <div className='text-lg'>密码未设置</div>
-                        <div className='text-sm opacity-70'>请设置密码以保护你的数据。</div>
+                        <div className='text-lg'>{t('password_not_set')}</div>
+                        <div className='text-sm opacity-70'>{t('password_warning_desc')}</div>
                     </div>
                     <Modal
                         content={(
                             <SettingsCard />
                         )}
-                        title={'系统设置'}
+                        title={t('system_settings')}
                     >
-                        <Button variant='outline' className='cursor-pointer rounded-full bg-yellow-500 hover:bg-yellow-500/80'>设置密码</Button>
+                        <Button variant='outline' className='cursor-pointer rounded-full bg-yellow-500 hover:bg-yellow-500/80'>{t('set_password')}</Button>
                     </Modal>
                 </div>
             )}

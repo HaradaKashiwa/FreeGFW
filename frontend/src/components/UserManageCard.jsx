@@ -18,6 +18,7 @@ import { PiSpinner } from "react-icons/pi"
 import { Form } from "@/components/ui/form"
 import { useGetUsers } from "../apis/user"
 import { Modal } from "./Modal"
+import { useLanguageStore } from "../store/useLanguageStore"
 
 export function UserManageCard() {
     const { trigger: addUsers, loading: addUsersLoading, error: addUsersError } = useAddUsers()
@@ -27,6 +28,7 @@ export function UserManageCard() {
     const [preDeleteUser, setPreDeleteUser] = useState(null)
     const [qrCodeUser, setQrCodeUser] = useState(null)
     const { trigger: deleteUser, loading: deleteUsersLoading, error: deleteUsersError } = useDeleteUser({ id: preDeleteUser?.id })
+    const { t } = useLanguageStore()
 
     const formatBytes = (bytes, decimals = 2) => {
         if (!+bytes) return '0 B'
@@ -41,12 +43,12 @@ export function UserManageCard() {
         <div className='bg-white rounded-lg pt-4'>
             <div className='md:flex items-center justify-between px-4'>
                 <div>
-                    <div className='text-md'>本地用户管理</div>
-                    <div className='text-xs opacity-50'>管理本地的的用户连接到FreeGFW</div>
+                    <div className='text-md'>{t('local_user_management')}</div>
+                    <div className='text-xs opacity-50'>{t('local_user_management_desc')}</div>
                 </div>
                 <div className='flex items-center gap-2 mt-4 md:mt-0'>
-                    <Input className='h-8' placeholder='搜索用户' />
-                    <Button className='cursor-pointer' size='sm' onClick={() => setOpen(true)}>添加用户 <IoAddCircleOutline /></Button>
+                    <Input className='h-8' placeholder={t('search_user')} />
+                    <Button className='cursor-pointer' size='sm' onClick={() => setOpen(true)}>{t('add_user')} <IoAddCircleOutline /></Button>
                 </div>
             </div>
             <Modal
@@ -55,8 +57,8 @@ export function UserManageCard() {
                     setOpen(val)
                     setError(null)
                 }}
-                title='添加新用户'
-                description='添加用户并分享给朋友们，让TA们也能享受到翻墙的乐趣。'
+                title={t('add_new_user')}
+                description={t('add_user_desc')}
                 content={
                     <Form
                         onSubmit={async v => {
@@ -72,13 +74,13 @@ export function UserManageCard() {
                         fields={[
                             {
                                 name: 'username',
-                                label: '用户名',
+                                label: t('username'),
                                 component: <Input placeholder="e.g. freegfw" name="username" type="text" />,
-                                description: '用户名仅用于方便识别用户'
+                                description: t('username_desc')
                             }
                         ]}
                         submitLoading={addUsersLoading}
-                        submitText="添加"
+                        submitText={t('add')}
                         errors={error ? [{ field: 'username', message: error }] : []}
                     />
                 }
@@ -86,18 +88,18 @@ export function UserManageCard() {
             <div className='mt-4'>
                 <div className='flex items-center gap-4 p-4 py-2 font-bold border-b'>
                     <div className='flex-1 flex items-center gap-2'>
-                        用户
+                        {t('user')}
                     </div>
                     <div className='w-32 text-center'>
-                        流量
+                        {t('traffic')}
                     </div>
-                    <div className="w-32 text-right">
-                        操作
+                    <div className="w-32 text-end pe-4">
+                        {t('actions')}
                     </div>
                 </div>
                 <div className='max-h-96 overflow-y-auto'>
                     {!usersLoaded && <PiSpinner className='text-primary animate-spin text-2xl mx-auto m-5' />}
-                    {!users?.length && usersLoaded && <div className='text-center text-sm opacity-70 m-5'>暂无用户，开始添加一个用户吧</div>}
+                    {!users?.length && usersLoaded && <div className='text-center text-sm opacity-70 m-5'>{t('no_users_yet')}</div>}
                     {users?.map(user => (
                         <div key={user.uuid} className='flex items-center gap-4 p-4 border-b last:border-b-0'>
                             <div className='flex-1 flex items-center gap-4'>
@@ -107,11 +109,11 @@ export function UserManageCard() {
                                 </div>
                             </div>
                             <div className='w-32 text-xs opacity-70 text-center flex flex-col justify-center'>
-                                <div>↑ {formatBytes(user.upload || 0)}</div>
-                                <div>↓ {formatBytes(user.download || 0)}</div>
+                                <div dir="ltr">↑ {formatBytes(user.upload || 0)}</div>
+                                <div dir="ltr">↓ {formatBytes(user.download || 0)}</div>
                             </div>
                             <div className="flex w-32 justify-center gap-2">
-                                <Button size='sm' variant='outline' className='cursor-pointer w-20 px-0' onClick={() => setQrCodeUser(user)}><IoQrCode /> 连接码</Button>
+                                <Button size='sm' variant='outline' className='cursor-pointer w-20 px-0' onClick={() => setQrCodeUser(user)}><IoQrCode /> {t('connect_code')}</Button>
                                 <Button size='sm' variant='destructive' className='cursor-pointer px-2' onClick={() => setPreDeleteUser(user)}><IoTrashBin /></Button>
                             </div>
                         </div>
@@ -119,24 +121,24 @@ export function UserManageCard() {
                 </div>
             </div>
             <Modal
-                title='删除用户'
-                description={`确定要删除 ${preDeleteUser?.username} 吗？`}
+                title={t('delete_user')}
+                description={preDeleteUser ? t('delete_user_confirm', { username: preDeleteUser.username }) : ''}
                 open={!!preDeleteUser}
                 onOpenChange={() => setPreDeleteUser(null)}
                 content={
                     <div className='flex gap-2 justify-end'>
-                        <Button variant='outline' onClick={() => setPreDeleteUser(null)}>取消</Button>
+                        <Button variant='outline' onClick={() => setPreDeleteUser(null)}>{t('cancel')}</Button>
                         <Button variant='destructive' onClick={async () => {
                             await deleteUser()
                             refreshUsers()
                             setPreDeleteUser(null)
-                        }}>确定 {deleteUsersLoading && <PiSpinner className='animate-spin' />}</Button>
+                        }}>{t('confirm')} {deleteUsersLoading && <PiSpinner className='animate-spin' />}</Button>
                     </div>
                 }
             />
             <Modal
-                title='连接配置'
-                description='使用支持的客户端扫描下方二维码或复制链接即可导入配置。'
+                title={t('connection_config')}
+                description={t('connection_config_desc')}
                 open={!!qrCodeUser}
                 onOpenChange={() => setQrCodeUser(null)}
                 content={

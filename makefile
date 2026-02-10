@@ -12,7 +12,7 @@ docker:
 	docker save freegfw:latest > dist/freegfw.tar
 
 run:
-	go run -tags with_reality_server .
+	PORT=8081 go run -tags with_reality_server,with_quic,with_clash_api .
 
 build:
-	go build -tags with_reality_server -o freegfw .
+	go build -tags with_reality_server,with_quic,with_clash_api -o freegfw .
