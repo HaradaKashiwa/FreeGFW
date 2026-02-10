@@ -6,8 +6,6 @@ import (
 	"freegfw/models"
 	"log"
 	"time"
-
-	"github.com/sagernet/sing-box/experimental/clashapi"
 )
 
 func ConnectSingboxAndBroadcast() {
@@ -48,25 +46,7 @@ func monitorDirectly() {
 		// Capture current instance to detect restarts
 		currentInstance := coreInstance.instance
 
-		router := currentInstance.Router()
-		if router == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		cs := router.ClashServer()
-		if cs == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		server, ok := cs.(*clashapi.Server)
-		if !ok {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		tm := server.TrafficManager()
+		tm := coreInstance.TrafficManager
 		if tm == nil {
 			time.Sleep(1 * time.Second)
 			continue

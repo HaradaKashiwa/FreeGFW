@@ -14,7 +14,7 @@ RUN go mod download
 COPY ./ ./
 
 # Build the binary
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags with_reality_server,with_quic,with_clash_api -o /main .
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags with_utls,with_quic,with_clash_api -o /main .
 
 # Final stage
 FROM alpine:latest

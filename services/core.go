@@ -11,15 +11,18 @@ import (
 	_ "github.com/sagernet/sing-box/include"
 	"github.com/sagernet/sing-box/option"
 
+	"github.com/sagernet/sing-box/experimental/clashapi/trafficontrol"
+
 	"freegfw/database"
 	"freegfw/models"
 	"strings"
 )
 
 type CoreService struct {
-	ConfigContent []byte
-	instance      *box.Box
-	cancel        context.CancelFunc
+	ConfigContent  []byte
+	instance       *box.Box
+	cancel         context.CancelFunc
+	TrafficManager *trafficontrol.Manager
 }
 
 var (
@@ -157,6 +160,10 @@ func (c *CoreService) Start() error {
 		return err
 	}
 	c.instance = instance
+
+	c.TrafficManager = trafficontrol.NewManager()
+	tracker := NewStatisticsTracker(c.TrafficManager, instance.Outbound())
+	instance.Router().AppendTracker(tracker)
 
 	if err := instance.Start(); err != nil {
 		c.Kill()
