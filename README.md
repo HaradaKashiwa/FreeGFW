@@ -3,7 +3,7 @@
 [English](README_EN.md) | [فارسی](README_FA.md) | [中文](README.md)
 
 
-FreeGFW 是一个基于 [Sing-box](https://github.com/sagernet/sing-box) 核心构建的高性能代理服务管理系统。它提供了一个现代化的 Web 界面，用于轻松部署、管理和监控各类代理协议服务。
+FreeGFW 是一个基于 [Sing-box](https://github.com/sagernet/sing-box) 和 [Xray](https://github.com/XTLS/Xray-core) 核心构建的高性能代理服务管理系统。它提供了一个现代化的 Web 界面，用于轻松部署、管理和监控各类代理协议服务。
 
 FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理系统，让用户可以轻松部署和管理自己的代理服务。让翻墙变得简单，让普通人也可以轻松使用代理服务。为了方便普通人使用，从根本上杜绝了FreeGFW的特征，避免爆破及空间搜索引擎的扫描。
 
@@ -15,7 +15,7 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 
 ## ✨ 主要特性
 
-- 🚀 **高性能核心**: 基于 Sing-box 构建，支持最新的代理协议和特性。
+- 🚀 **高性能核心**: 基于 [Sing-box](https://github.com/sagernet/sing-box) 和 [Xray](https://github.com/XTLS/Xray-core) 构建，支持最新的代理协议和特性。
 - 🌐 **多协议支持**: 原生支持 VLESS (Reality/Vision), VMess, Shadowsocks, Hysteria2 等主流协议。
 - 🖥️ **现代化仪表盘**: 内置 React + TailwindCSS 构建的 Web 管理界面，操作直观便捷。
 - 👥 **用户管理**: 支持多用户系统，可为不同用户分配独立的配置。

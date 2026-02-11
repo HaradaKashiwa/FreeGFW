@@ -3,7 +3,7 @@
 [English](README_EN.md) | [فارسی](README_FA.md) | [中文](README.md)
 
 
-FreeGFW is a high-performance proxy service management system built on the [Sing-box](https://github.com/sagernet/sing-box) core. It provides a modern web interface for easily deploying, managing, and monitoring various proxy protocol services.
+FreeGFW is a high-performance proxy service management system built on the [Sing-box](https://github.com/sagernet/sing-box) and [Xray](https://github.com/XTLS/Xray-core) core. It provides a modern web interface for easily deploying, managing, and monitoring various proxy protocol services.
 
 FreeGFW aims to provide a simple, powerful proxy management system, making it easy for users to deploy and manage their own proxy services. It simplifies circumvention, allowing ordinary people to easily use proxy services. To facilitate use by everyone, it fundamentally eliminates FreeGFW's fingerprint characteristics to avoid detection and scanning by search engines.
 
@@ -15,7 +15,7 @@ FreeGFW aims to provide a simple, powerful proxy management system, making it ea
 
 ## ✨ Key Features
 
-- 🚀 **High Performance Core**: Built on Sing-box, supporting the latest proxy protocols and features.
+- 🚀 **High Performance Core**: Built on [Sing-box](https://github.com/sagernet/sing-box) and [Xray](https://github.com/XTLS/Xray-core), supporting the latest proxy protocols and features.
 - 🌐 **Multi-Protocol Support**: Native support for VLESS (Reality/Vision), VMess, Shadowsocks, Hysteria2, etc.
 - 🖥️ **Modern Dashboard**: Built-in Web management interface built with React + TailwindCSS, intuitive and convenient.
 - 👥 **User Management**: Supports multi-user system, assigning independent configurations for different users.
