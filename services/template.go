@@ -297,7 +297,8 @@ func BuildUsers(templateName string) ([]map[string]interface{}, error) {
 
 	for _, u := range users {
 		userMap := map[string]interface{}{
-			"name": u.Username,
+			"name":  u.Username,
+			"limit": u.SpeedLimit,
 		}
 		// Customize keys based on protocol type to avoid "unknown field" errors
 		switch serverType {

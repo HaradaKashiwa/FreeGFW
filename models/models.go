@@ -44,13 +44,14 @@ func (j JSON) Value() (driver.Value, error) {
 }
 
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `json:"uuid"`
-	Username  string    `json:"username"`
-	Upload    int64     `json:"upload" gorm:"default:0"`
-	Download  int64     `json:"download" gorm:"default:0"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	UUID       string    `json:"uuid"`
+	Username   string    `json:"username"`
+	Upload     int64     `json:"upload" gorm:"default:0"`
+	Download   int64     `json:"download" gorm:"default:0"`
+	SpeedLimit uint64    `json:"speedLimit" gorm:"default:0"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 type Link struct {

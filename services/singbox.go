@@ -23,6 +23,42 @@ func (c *CoreService) refreshSingbox(server map[string]interface{}, templateName
 	}
 
 	users, _ := BuildUsers(templateName)
+	c.UserLimits = make(map[string]uint64)
+	for _, u := range users {
+		var limit uint64
+		if l, ok := u["limit"].(uint64); ok {
+			limit = l
+		} else if l, ok := u["limit"].(float64); ok {
+			limit = uint64(l)
+		}
+
+		if limit > 0 {
+			if name, ok := u["name"].(string); ok && name != "" {
+				c.UserLimits[name] = limit
+			}
+			if uuid, ok := u["uuid"].(string); ok && uuid != "" {
+				c.UserLimits[uuid] = limit
+			}
+			if pass, ok := u["password"].(string); ok && pass != "" {
+				c.UserLimits[pass] = limit
+			}
+		}
+		delete(u, "limit")
+	}
+
+	if len(users) == 1 {
+		// Set default limit to the only user's limit
+		// We need to find the limit from the map we just populated
+		// But wait, the loop above populates c.UserLimits. It doesn't modify users array's limit permanently (it deletes it).
+		// We can just iterate the map.
+		for _, limit := range c.UserLimits {
+			if limit > 0 {
+				c.UserLimits["__DEFAULT__"] = limit
+				break
+			}
+		}
+	}
+
 	tls, _ := BuildServerTLS(templateName)
 
 	server["users"] = users
@@ -48,6 +84,11 @@ func (c *CoreService) refreshSingbox(server map[string]interface{}, templateName
 
 	data, _ := json.MarshalIndent(config, "", "  ")
 	c.ConfigContent = data
+
+	if c.tracker != nil {
+		c.tracker.UpdateLimits(c.UserLimits)
+	}
+
 	return nil
 }
 

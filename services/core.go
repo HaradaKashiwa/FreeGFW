@@ -29,6 +29,8 @@ type CoreService struct {
 	cancel         context.CancelFunc
 	TrafficManager *trafficontrol.Manager
 	CurrentEngine  string // "singbox" or "xray"
+	UserLimits     map[string]uint64
+	tracker        *StatisticsTracker
 }
 
 var (
@@ -108,6 +110,7 @@ func (c *CoreService) Kill() error {
 		c.xrayInstance.Close()
 		c.xrayInstance = nil
 	}
+	c.tracker = nil // Reset tracker
 
 	time.Sleep(1 * time.Second)
 	return nil
@@ -167,7 +170,8 @@ func (c *CoreService) Start() error {
 	c.instance = instance
 
 	c.TrafficManager = trafficontrol.NewManager()
-	tracker := NewStatisticsTracker(c.TrafficManager, instance.Outbound())
+	tracker := NewStatisticsTracker(c.TrafficManager, instance.Outbound(), c.UserLimits)
+	c.tracker = tracker
 	instance.Router().AppendTracker(tracker)
 
 	if err := instance.Start(); err != nil {

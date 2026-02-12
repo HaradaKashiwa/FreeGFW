@@ -20,10 +20,11 @@ import (
 
 func AddUsers(c *gin.Context) {
 	var payload struct {
-		Count    int    `json:"count"`
-		Title    string `json:"title"`
-		Name     string `json:"name"`
-		Username string `json:"username"`
+		Count      int    `json:"count"`
+		Title      string `json:"title"`
+		Name       string `json:"name"`
+		Username   string `json:"username"`
+		SpeedLimit uint64 `json:"speedLimit"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -53,8 +54,9 @@ func AddUsers(c *gin.Context) {
 				return
 			}
 			user := models.User{
-				Username: title,
-				UUID:     utils.RandomUUID(),
+				Username:   title,
+				UUID:       utils.RandomUUID(),
+				SpeedLimit: payload.SpeedLimit,
 			}
 			if err := database.DB.Create(&user).Error; err != nil {
 				log.Println("Failed to create user in DB:", err)
@@ -74,6 +76,42 @@ func AddUsers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload: count or title/name/username required"})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func UpdateUser(c *gin.Context) {
+	id := c.Param("id")
+	var payload struct {
+		Username   *string `json:"username"`
+		SpeedLimit *uint64 `json:"speedLimit"`
+	}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if payload.Username != nil && *payload.Username != "" {
+		user.Username = *payload.Username
+	}
+	if payload.SpeedLimit != nil {
+		user.SpeedLimit = *payload.SpeedLimit
+	}
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	core := services.NewCoreService()
+	core.Refresh()
+	core.Restart()
+
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 

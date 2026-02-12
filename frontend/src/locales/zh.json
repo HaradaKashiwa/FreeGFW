@@ -12,6 +12,8 @@
     "add": "添加",
     "user": "用户",
     "traffic": "流量",
+    "speed_limit": "限速 (Mbps)",
+    "speed_limit_desc": "0 表示不限速",
     "actions": "操作",
     "no_users_yet": "暂无用户，开始添加一个用户吧",
     "connect_code": "连接码",

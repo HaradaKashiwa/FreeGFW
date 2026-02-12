@@ -11,6 +11,8 @@
     "add": "Add",
     "user": "User",
     "traffic": "Traffic",
+    "speed_limit": "Speed Limit (Mbps)",
+    "speed_limit_desc": "0 for unlimited",
     "actions": "Actions",
     "no_users_yet": "No users yet, start by adding one.",
     "connect_code": "Connect Code",

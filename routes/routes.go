@@ -89,6 +89,7 @@ func SetupRouter(staticFS fs.FS) *gin.Engine {
 		api.PUT("/configs/update", controllers.UpdateConfig)
 
 		api.POST("/users", controllers.AddUsers)
+		api.PUT("/users/:id", controllers.UpdateUser)
 		api.GET("/users", controllers.GetUsers)
 		api.DELETE("/users/:id", controllers.DeleteUser)
 

@@ -13,12 +13,77 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { useAddUsers, useDeleteUser } from "../apis/user"
+import { useAddUsers, useDeleteUser, useUpdateUser } from "../apis/user"
 import { PiSpinner } from "react-icons/pi"
 import { Form } from "@/components/ui/form"
 import { useGetUsers } from "../apis/user"
 import { Modal } from "./Modal"
 import { useLanguageStore } from "../store/useLanguageStore"
+
+const MBPS = 125000
+
+function UserRow({ user, refresh, setQrCodeUser, setPreDeleteUser, formatBytes }) {
+    const { t } = useLanguageStore()
+    const { trigger: updateUser, loading: updateLoading } = useUpdateUser({ id: user.id })
+    const [isEditing, setIsEditing] = useState(false)
+    const [limit, setLimit] = useState(user.speedLimit ? user.speedLimit / MBPS : 0)
+
+    useEffect(() => {
+        setLimit(user.speedLimit ? user.speedLimit / MBPS : 0)
+    }, [user.speedLimit])
+
+    const handleSave = async () => {
+        try {
+            await updateUser({ speedLimit: Math.floor(limit * MBPS) })
+            setIsEditing(false)
+            refresh()
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    return (
+        <div className='flex items-center gap-4 p-4 border-b last:border-b-0'>
+            <div className='flex-1 flex items-center gap-4'>
+                <img src={`https://avatar.vercel.sh/${user.username}`} className='w-8 h-8 rounded-full' />
+                <div>
+                    <div>{user.username}</div>
+                </div>
+            </div>
+            <div className='flex-1 text-xs opacity-70 flex flex-col justify-center'>
+                <div dir="ltr">↑ {formatBytes(user.upload || 0)}</div>
+                <div dir="ltr">↓ {formatBytes(user.download || 0)}</div>
+            </div>
+            <div className='flex-1 text-xs opacity-70 flex items-center h-8'>
+                {isEditing ? (
+                    <div className="flex items-center gap-1">
+                        <Input
+                            type="number"
+                            className="h-7 w-24 text-xs"
+                            value={limit}
+                            onChange={e => setLimit(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') handleSave()
+                            }}
+                            autoFocus
+                        />
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave} disabled={updateLoading}>
+                            {updateLoading ? <PiSpinner className="animate-spin" /> : <IoCheckmark />}
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="cursor-pointer hover:underline" onClick={() => setIsEditing(true)}>
+                        {user.speedLimit ? (user.speedLimit / MBPS).toFixed(2) + ' Mbps' : '∞'}
+                    </div>
+                )}
+            </div>
+            <div className="flex-1 flex justify-end gap-2">
+                <Button size='sm' variant='outline' className='cursor-pointer px-0' onClick={() => setQrCodeUser(user)}><IoQrCode /> <span className='hidden md:block'>{t('connect_code')}</span></Button>
+                <Button size='sm' variant='destructive' className='cursor-pointer px-2' onClick={() => setPreDeleteUser(user)}><IoTrashBin /></Button>
+            </div>
+        </div>
+    )
+}
 
 export function UserManageCard() {
     const { trigger: addUsers, loading: addUsersLoading, error: addUsersError } = useAddUsers()
@@ -64,7 +129,10 @@ export function UserManageCard() {
                         onSubmit={async v => {
                             try {
                                 setError(null)
-                                await addUsers(v)
+                                await addUsers({
+                                    ...v,
+                                    speedLimit: Math.floor(Number(v.speedLimit) * MBPS)
+                                })
                                 refreshUsers()
                                 setOpen(false)
                             } catch (e) {
@@ -77,6 +145,12 @@ export function UserManageCard() {
                                 label: t('username'),
                                 component: <Input placeholder="e.g. freegfw" name="username" type="text" />,
                                 description: t('username_desc')
+                            },
+                            {
+                                name: 'speedLimit',
+                                label: t('speed_limit'),
+                                component: <Input placeholder="0" name="speedLimit" type="number" />,
+                                description: t('speed_limit_desc')
                             }
                         ]}
                         submitLoading={addUsersLoading}
@@ -93,6 +167,9 @@ export function UserManageCard() {
                     <div className='flex-1'>
                         {t('traffic')}
                     </div>
+                    <div className='flex-1'>
+                        {t('speed_limit')}
+                    </div>
                     <div className="flex-1 text-end pe-4">
                         {t('actions')}
                     </div>
@@ -101,22 +178,14 @@ export function UserManageCard() {
                     {!usersLoaded && <PiSpinner className='text-primary animate-spin text-2xl mx-auto m-5' />}
                     {!users?.length && usersLoaded && <div className='text-center text-sm opacity-70 m-5'>{t('no_users_yet')}</div>}
                     {users?.map(user => (
-                        <div key={user.uuid} className='flex items-center gap-4 p-4 border-b last:border-b-0'>
-                            <div className='flex-1 flex items-center gap-4'>
-                                <img src={`https://avatar.vercel.sh/${user.username}`} className='w-8 h-8 rounded-full' />
-                                <div>
-                                    <div>{user.username}</div>
-                                </div>
-                            </div>
-                            <div className='flex-1 text-xs opacity-70 flex flex-col justify-center'>
-                                <div dir="ltr">↑ {formatBytes(user.upload || 0)}</div>
-                                <div dir="ltr">↓ {formatBytes(user.download || 0)}</div>
-                            </div>
-                            <div className="flex-1 flex justify-end gap-2">
-                                <Button size='sm' variant='outline' className='cursor-pointer px-0' onClick={() => setQrCodeUser(user)}><IoQrCode /> <span className='hidden md:block'>{t('connect_code')}</span></Button>
-                                <Button size='sm' variant='destructive' className='cursor-pointer px-2' onClick={() => setPreDeleteUser(user)}><IoTrashBin /></Button>
-                            </div>
-                        </div>
+                        <UserRow
+                            key={user.uuid}
+                            user={user}
+                            refresh={refreshUsers}
+                            setQrCodeUser={setQrCodeUser}
+                            setPreDeleteUser={setPreDeleteUser}
+                            formatBytes={formatBytes}
+                        />
                     ))}
                 </div>
             </div>

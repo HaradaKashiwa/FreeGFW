@@ -14,7 +14,16 @@ import (
 
 func (c *CoreService) refreshXray(server map[string]interface{}, templateName string) error {
 	users, _ := BuildUsers(templateName)
-	// Singbox users: uuid, flow. Xray users: id, flow.
+	policyLevels := map[string]interface{}{
+		"0": map[string]interface{}{
+			"statsUserUplink":   true,
+			"statsUserDownlink": true,
+		},
+	}
+	// Map speed limit -> level ID
+	limitLevels := make(map[uint64]uint32)
+	nextLevel := uint32(1)
+
 	xrayUsers := []map[string]interface{}{}
 	for _, u := range users {
 		xu := map[string]interface{}{}
@@ -29,6 +38,30 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 		if name, ok := u["name"]; ok {
 			xu["email"] = name
 		}
+
+		if limit, ok := u["limit"].(uint64); ok && limit > 0 {
+			limitKB := limit / 1024
+			if limitKB < 1 {
+				limitKB = 1
+			}
+			if lvl, exists := limitLevels[limitKB]; exists {
+				xu["level"] = lvl
+			} else {
+				limitLevels[limitKB] = nextLevel
+				xu["level"] = nextLevel
+				policyLevels[fmt.Sprintf("%d", nextLevel)] = map[string]interface{}{
+					"uplinkOnly":        limitKB,
+					"downlinkOnly":      limitKB,
+					"statsUserUplink":   true,
+					"statsUserDownlink": true,
+					"bufferSize":        4,
+				}
+				nextLevel++
+			}
+		} else {
+			xu["level"] = 0
+		}
+
 		xrayUsers = append(xrayUsers, xu)
 	}
 
@@ -150,12 +183,7 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 
 	// Add stats and policy
 	policy := map[string]interface{}{
-		"levels": map[string]interface{}{
-			"0": map[string]interface{}{
-				"statsUserUplink":   true,
-				"statsUserDownlink": true,
-			},
-		},
+		"levels": policyLevels,
 		"system": map[string]interface{}{
 			"statsInboundUplink":   true,
 			"statsInboundDownlink": true,

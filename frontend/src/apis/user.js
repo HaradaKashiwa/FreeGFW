@@ -20,3 +20,10 @@ export function useDeleteUser({ id }) {
         method: 'DELETE'
     })
 }
+
+export function useUpdateUser({ id = '' }) {
+    return useTrigger({
+        url: `/users/${id}`,
+        method: 'PUT'
+    })
+}
