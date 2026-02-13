@@ -75,18 +75,22 @@ func (t *StatisticsTracker) RoutedPacketConnection(ctx context.Context, conn N.P
 
 }
 
-func (t *StatisticsTracker) getLimiter(metadata adapter.InboundContext) *rate.Limiter {
+func (t *StatisticsTracker) GetLimiterForUser(user string) *rate.Limiter {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.limiters == nil {
 		return nil
 	}
 
-	limiter, ok := t.limiters[metadata.User]
+	limiter, ok := t.limiters[user]
 	if !ok {
 		limiter = t.limiters["__DEFAULT__"]
 	}
 	return limiter
+}
+
+func (t *StatisticsTracker) getLimiter(metadata adapter.InboundContext) *rate.Limiter {
+	return t.GetLimiterForUser(metadata.User)
 }
 
 // remove unused getLimit

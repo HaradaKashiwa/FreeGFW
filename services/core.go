@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"reflect"
 	"sync"
 	"time"
+	"unsafe"
 
 	box "github.com/sagernet/sing-box"
 	"github.com/sagernet/sing-box/include"
@@ -15,6 +17,9 @@ import (
 	"github.com/sagernet/sing-box/experimental/clashapi/trafficontrol"
 
 	xray_core "github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/features"
+	"github.com/xtls/xray-core/features/routing"
+	"github.com/xtls/xray-core/features/stats"
 	"github.com/xtls/xray-core/infra/conf/serial"
 	_ "github.com/xtls/xray-core/main/distro/all"
 
@@ -31,6 +36,7 @@ type CoreService struct {
 	CurrentEngine  string // "singbox" or "xray"
 	UserLimits     map[string]uint64
 	tracker        *StatisticsTracker
+	XrayStats      stats.Manager
 }
 
 var (
@@ -125,6 +131,7 @@ func (c *CoreService) Start() error {
 
 	if c.CurrentEngine == "xray" {
 		// Parse JSON config to Xray Core Config
+		log.Println("[Core] Xray Config JSON:", string(c.ConfigContent))
 		coreConfig, err := serial.LoadJSONConfig(bytes.NewReader(c.ConfigContent))
 		if err != nil {
 			log.Println("Failed to parse xray config (json):", err)
@@ -137,13 +144,61 @@ func (c *CoreService) Start() error {
 			return err
 		}
 
+		// Inject Custom Dispatcher for Rate Limiting and Stats
+		if dispFeature := instance.GetFeature(routing.DispatcherType()); dispFeature != nil {
+			log.Println("[Core] Found existing dispatcher feature")
+			if disp, ok := dispFeature.(routing.Dispatcher); ok {
+				if c.tracker == nil {
+					c.tracker = NewStatisticsTracker(nil, nil, c.UserLimits)
+				} else {
+					c.tracker.UpdateLimits(c.UserLimits)
+				}
+				newDisp := NewXrayDispatcher(disp, c.tracker)
+
+				// Use reflection to REPLACE the feature in internal slice
+				// because AddFeature only appends, and GetFeature returns the first match.
+				v := reflect.ValueOf(instance).Elem()
+				fField := v.FieldByName("features")
+				fField = reflect.NewAt(fField.Type(), unsafe.Pointer(fField.UnsafeAddr())).Elem()
+
+				foundReplaced := false
+				numFeatures := fField.Len()
+				for i := 0; i < numFeatures; i++ {
+					featVal := fField.Index(i)
+					if featVal.Kind() == reflect.Interface && !featVal.IsNil() {
+						feat := featVal.Interface().(features.Feature)
+						if feat.Type() == routing.DispatcherType() {
+							fField.Index(i).Set(reflect.ValueOf(newDisp))
+							foundReplaced = true
+							log.Println("[Core] Replaced Xray dispatcher with custom dispatcher")
+						}
+
+						// Capture Stats Manager
+						if feat.Type() == stats.ManagerType() {
+							if sm, ok := feat.(stats.Manager); ok {
+								c.XrayStats = sm
+							}
+						}
+					}
+				}
+
+				if !foundReplaced {
+					instance.AddFeature(newDisp)
+					log.Println("[Core] Added custom dispatcher (no existing one found)")
+				}
+			}
+		}
+
 		if err := instance.Start(); err != nil {
 			log.Println("Failed to start xray:", err)
 			return err
 		}
 
 		c.xrayInstance = instance
-		c.TrafficManager = nil // Xray internal traffic tracking is different
+		c.TrafficManager = nil // Xray internal traffic tracking used via StatisticsTracker/XrayUserTraffic
+
+		go monitorXrayLoop(instance)
+
 		return nil
 	}
 

@@ -3,28 +3,55 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"freegfw/database"
 	"freegfw/models"
 
+	"log"
+	"sync"
+
 	xray_core "github.com/xtls/xray-core/core"
-	"github.com/xtls/xray-core/features/stats"
 )
+
+// XrayTrafficStats holds atomic counters for user traffic
+type XrayTrafficStats struct {
+	Up   int64
+	Down int64
+}
+
+// XrayUserTraffic maps user email/ID to their traffic stats
+var (
+	XrayUserTraffic      = make(map[string]*XrayTrafficStats)
+	XrayUserTrafficMutex sync.RWMutex
+)
+
+func GetXrayUserStats(user string) *XrayTrafficStats {
+	XrayUserTrafficMutex.RLock()
+	stats, ok := XrayUserTraffic[user]
+	XrayUserTrafficMutex.RUnlock()
+	if ok {
+		return stats
+	}
+
+	XrayUserTrafficMutex.Lock()
+	defer XrayUserTrafficMutex.Unlock()
+	// Double check
+	if stats, ok = XrayUserTraffic[user]; ok {
+		return stats
+	}
+	stats = &XrayTrafficStats{}
+	XrayUserTraffic[user] = stats
+	return stats
+}
 
 func (c *CoreService) refreshXray(server map[string]interface{}, templateName string) error {
 	users, _ := BuildUsers(templateName)
-	policyLevels := map[string]interface{}{
-		"0": map[string]interface{}{
-			"statsUserUplink":   true,
-			"statsUserDownlink": true,
-		},
-	}
-	// Map speed limit -> level ID
-	limitLevels := make(map[uint64]uint32)
-	nextLevel := uint32(1)
-
+	// Singbox users: uuid, flow. Xray users: id, flow.
 	xrayUsers := []map[string]interface{}{}
+	c.UserLimits = make(map[string]uint64) // Initialize limits
+
 	for _, u := range users {
 		xu := map[string]interface{}{}
 		if id, ok := u["uuid"]; ok {
@@ -38,31 +65,31 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 		if name, ok := u["name"]; ok {
 			xu["email"] = name
 		}
-
-		if limit, ok := u["limit"].(uint64); ok && limit > 0 {
-			limitKB := limit / 1024
-			if limitKB < 1 {
-				limitKB = 1
-			}
-			if lvl, exists := limitLevels[limitKB]; exists {
-				xu["level"] = lvl
-			} else {
-				limitLevels[limitKB] = nextLevel
-				xu["level"] = nextLevel
-				policyLevels[fmt.Sprintf("%d", nextLevel)] = map[string]interface{}{
-					"uplinkOnly":        limitKB,
-					"downlinkOnly":      limitKB,
-					"statsUserUplink":   true,
-					"statsUserDownlink": true,
-					"bufferSize":        4,
-				}
-				nextLevel++
-			}
-		} else {
-			xu["level"] = 0
-		}
-
 		xrayUsers = append(xrayUsers, xu)
+
+		// Capture limits
+		var limit uint64
+		if l, ok := u["limit"]; ok {
+			if v, ok := l.(uint64); ok {
+				limit = v
+			} else if v, ok := l.(float64); ok {
+				limit = uint64(v)
+			}
+		}
+		if limit > 0 {
+			if name, ok := u["name"].(string); ok {
+				c.UserLimits[name] = limit
+			}
+			if id, ok := u["uuid"].(string); ok {
+				c.UserLimits[id] = limit
+			}
+		}
+	}
+	log.Printf("[XrayConfig] Configured %d users for Xray", len(xrayUsers))
+
+	// Update tracker limits if exists (might be nil now, initialized in Start)
+	if c.tracker != nil {
+		c.tracker.UpdateLimits(c.UserLimits)
 	}
 
 	tlsConfig, _ := server["tls"].(map[string]interface{})
@@ -183,7 +210,12 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 
 	// Add stats and policy
 	policy := map[string]interface{}{
-		"levels": policyLevels,
+		"levels": map[string]interface{}{
+			"0": map[string]interface{}{
+				"statsUserUplink":   true,
+				"statsUserDownlink": true,
+			},
+		},
 		"system": map[string]interface{}{
 			"statsInboundUplink":   true,
 			"statsInboundDownlink": true,
@@ -193,6 +225,9 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 	stats := map[string]interface{}{}
 
 	config := map[string]interface{}{
+		"log": map[string]interface{}{
+			"loglevel": "info",
+		},
 		"stats":    stats,
 		"policy":   policy,
 		"inbounds": []interface{}{inbound},
@@ -209,18 +244,14 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 }
 
 func monitorXrayLoop(instance *xray_core.Instance) {
-	v := instance.GetFeature(stats.ManagerType())
-	if v == nil {
-		return
-	}
-	mgr := v.(stats.Manager)
-
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
+	// Store last cumulative values to calculate diff
+	// user -> {Up, Down}
+	lastStats := make(map[string]struct{ Up, Down int64 })
 	userTraffic := make(map[string]struct{ Up, Down int64 })
 	var flushCounter int
-	lastStats := make(map[string]int64)
 	currentEngine := coreInstance.CurrentEngine
 
 	for range ticker.C {
@@ -228,59 +259,58 @@ func monitorXrayLoop(instance *xray_core.Instance) {
 			return
 		}
 
-		var users []models.User
-		database.DB.Find(&users)
-
-		var links []models.Link
-		database.DB.Where("last_sync_status = ?", "success").Find(&links)
-
-		allNames := []string{}
-		for _, u := range users {
-			allNames = append(allNames, u.Username)
-		}
-		for _, l := range links {
-			var lUsers []string
-			json.Unmarshal(l.Users, &lUsers)
-			allNames = append(allNames, lUsers...)
-		}
-		allNames = append(allNames, "default")
-
 		totalUp := int64(0)
 		totalDown := int64(0)
-
 		diffUpTotal := int64(0)
 		diffDownTotal := int64(0)
 
-		processedUsers := make(map[string]bool)
+		// Iterate XrayUserTraffic
+		XrayUserTrafficMutex.RLock()
 
-		for _, name := range allNames {
-			if name == "" || processedUsers[name] {
-				continue
+		// Create a set of all users to check (from UserLimits + XrayUserTraffic)
+		usersToCheck := make(map[string]bool)
+		for u := range XrayUserTraffic {
+			usersToCheck[u] = true
+		}
+		if coreInstance != nil && coreInstance.UserLimits != nil {
+			for u := range coreInstance.UserLimits {
+				usersToCheck[u] = true
 			}
-			processedUsers[name] = true
+		}
 
-			upName := "user>>>" + name + ">>>traffic>>>uplink"
-			downName := "user>>>" + name + ">>>traffic>>>downlink"
+		for user := range usersToCheck {
+			cUp := int64(0)
+			cDown := int64(0)
 
-			cUp := getCounterVal(mgr, upName)
-			cDown := getCounterVal(mgr, downName)
+			// 1. Get from Custom Dispatcher (XrayUserTraffic)
+			if stats, ok := XrayUserTraffic[user]; ok {
+				cUp += atomic.LoadInt64(&stats.Up)
+				cDown += atomic.LoadInt64(&stats.Down)
+			}
+
+			// 2. Get from Internal Stats Manager
+			if coreInstance != nil && coreInstance.XrayStats != nil {
+				// Pattern: user>>>[email]>>>traffic>>>uplink
+				if upCounter := coreInstance.XrayStats.GetCounter("user>>>" + user + ">>>traffic>>>uplink"); upCounter != nil {
+					cUp += upCounter.Value()
+				}
+				if downCounter := coreInstance.XrayStats.GetCounter("user>>>" + user + ">>>traffic>>>downlink"); downCounter != nil {
+					cDown += downCounter.Value()
+				}
+			}
 
 			if cUp > 0 || cDown > 0 {
 				totalUp += cUp
 				totalDown += cDown
 
-				prevUp, okUp := lastStats[upName]
-				prevDown, okDown := lastStats[downName]
-
-				if !okUp || !okDown {
-					lastStats[upName] = cUp
-					lastStats[downName] = cDown
+				prev, ok := lastStats[user]
+				if !ok {
+					lastStats[user] = struct{ Up, Down int64 }{cUp, cDown}
 					continue
 				}
 
-				dUp := cUp - prevUp
-				dDown := cDown - prevDown
-
+				dUp := cUp - prev.Up
+				dDown := cDown - prev.Down
 				if dUp < 0 {
 					dUp = 0
 				}
@@ -291,15 +321,15 @@ func monitorXrayLoop(instance *xray_core.Instance) {
 				diffUpTotal += dUp
 				diffDownTotal += dDown
 
-				lastStats[upName] = cUp
-				lastStats[downName] = cDown
+				lastStats[user] = struct{ Up, Down int64 }{cUp, cDown}
 
-				uT := userTraffic[name]
+				uT := userTraffic[user]
 				uT.Up += dUp
 				uT.Down += dDown
-				userTraffic[name] = uT
+				userTraffic[user] = uT
 			}
 		}
+		XrayUserTrafficMutex.RUnlock()
 
 		if Hub != nil {
 			speed := map[string]float64{
@@ -334,12 +364,4 @@ func monitorXrayLoop(instance *xray_core.Instance) {
 			flushCounter = 0
 		}
 	}
-}
-
-func getCounterVal(mgr stats.Manager, name string) int64 {
-	c := mgr.GetCounter(name)
-	if c != nil {
-		return c.Value()
-	}
-	return 0
 }
