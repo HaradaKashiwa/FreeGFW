@@ -182,6 +182,115 @@ func (c *CoreService) Start() error {
 					}
 				}
 
+				// HACK: Proxyman (InboundManager) might have cached the old dispatcher.
+				// We need to iterate features again, find InboundManager, and update its reference in handlers.
+				for i := 0; i < numFeatures; i++ {
+					featVal := fField.Index(i)
+					if featVal.Kind() == reflect.Interface && !featVal.IsNil() {
+						feat := featVal.Interface().(features.Feature)
+						t := reflect.TypeOf(feat)
+						if t.Kind() == reflect.Ptr && t.Elem().Name() == "Manager" {
+							pkgPath := t.Elem().PkgPath()
+							if pkgPath == "github.com/xtls/xray-core/app/proxyman/inbound" || (len(pkgPath) > 7 && pkgPath[len(pkgPath)-7:] == "inbound") {
+								log.Printf("[Core] Inspecting InboundManager: %v", t)
+
+								vMgr := reflect.ValueOf(feat).Elem()
+								if vMgr.Kind() == reflect.Ptr {
+									vMgr = vMgr.Elem()
+								}
+
+								dispatcherType := reflect.TypeOf((*routing.Dispatcher)(nil)).Elem()
+
+								// Helper to update dispatcher in a struct (recursive)
+								var updateDispatcher func(h interface{}, depth int)
+								updateDispatcher = func(h interface{}, depth int) {
+									if depth > 5 {
+										return
+									}
+									vH := reflect.ValueOf(h)
+									if vH.Kind() == reflect.Ptr {
+										if vH.IsNil() {
+											return
+										}
+										vH = vH.Elem()
+									} else if vH.Kind() == reflect.Interface {
+										if vH.IsNil() {
+											return
+										}
+										vH = vH.Elem()
+										if vH.Kind() == reflect.Ptr {
+											vH = vH.Elem()
+										}
+									}
+
+									if vH.Kind() != reflect.Struct {
+										return
+									}
+
+									for k := 0; k < vH.NumField(); k++ {
+										f := vH.Field(k)
+										fType := f.Type()
+										fName := vH.Type().Field(k).Name
+
+										// log.Printf("[Core] Field: %s Type: %v", fName, fType)
+
+										if fType == dispatcherType {
+											log.Printf("[Core] Updating dispatcher in Field: %s (Depth %d)", fName, depth)
+											f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
+											f.Set(reflect.ValueOf(newDisp))
+										}
+
+										// Recurse into workers slice
+										if fName == "workers" && f.Kind() == reflect.Slice {
+											log.Println("[Core] Recursing into workers slice")
+											f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
+											for j := 0; j < f.Len(); j++ {
+												elem := f.Index(j)
+												if elem.CanAddr() {
+													updateDispatcher(elem.Addr().Interface(), depth+1)
+												}
+											}
+										}
+
+										// Recurse into specific fields like mux, proxy
+										if fName == "mux" || fName == "proxy" {
+											// log.Printf("[Core] Recursing into %s", fName)
+											f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
+											if f.CanInterface() {
+												updateDispatcher(f.Interface(), depth+1)
+											}
+										}
+									}
+								}
+
+								for k := 0; k < vMgr.NumField(); k++ {
+									f := vMgr.Field(k)
+									fName := vMgr.Type().Field(k).Name
+
+									if fName == "untaggedHandlers" && f.Kind() == reflect.Slice {
+										log.Println("[Core] Inspecting untaggedHandlers")
+										f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
+										for j := 0; j < f.Len(); j++ {
+											handler := f.Index(j).Interface()
+											updateDispatcher(handler, 0)
+										}
+									}
+
+									if fName == "taggedHandlers" && f.Kind() == reflect.Map {
+										log.Println("[Core] Inspecting taggedHandlers")
+										f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
+										iter := f.MapRange()
+										for iter.Next() {
+											handler := iter.Value().Interface()
+											updateDispatcher(handler, 0)
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
 				if !foundReplaced {
 					instance.AddFeature(newDisp)
 					log.Println("[Core] Added custom dispatcher (no existing one found)")

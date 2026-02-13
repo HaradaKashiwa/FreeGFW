@@ -57,16 +57,20 @@ func (d *XrayDispatcher) Dispatch(ctx context.Context, dest net.Destination) (*t
 		log.Printf("[XrayDispatcher] Found user: %s", email)
 	}
 
-	// FALLBACK DEBUGGING: Always wrap, just label as unknown if missing
+	// FALLBACK DEBUGGING: Log if missing, but do not default to "unknown" yet
 	if email == "" {
-		log.Printf("[XrayDispatcher] User not found in context. Defaulting to 'unknown'.")
-		email = "unknown"
 		// Check fallback attributes
 		if content := session.ContentFromContext(ctx); content != nil {
 			if uVal, ok := content.Attributes["InboundUser"]; ok {
 				log.Printf("[XrayDispatcher] Found InboundUser in attributes: %T", uVal)
 			}
 		}
+	} else {
+		log.Printf("[XrayDispatcher] Found user: %s", email)
+	}
+
+	if email == "" {
+		return link, nil
 	}
 
 	limiter := d.tracker.GetLimiterForUser(email)
@@ -114,10 +118,45 @@ func (d *XrayDispatcher) Dispatch(ctx context.Context, dest net.Destination) (*t
 
 func (d *XrayDispatcher) DispatchLink(ctx context.Context, dest net.Destination, link *transport.Link) error {
 	log.Printf("[XrayDispatcher] DispatchLink called for dest: %s", dest.String())
+
+	// Identify user
+	var email string
 	inbound := session.InboundFromContext(ctx)
 	if inbound != nil && inbound.User != nil {
-		log.Printf("[XrayDispatcher] DispatchLink Found user: %s", inbound.User.Email)
+		email = inbound.User.Email
+		log.Printf("[XrayDispatcher] DispatchLink Found user: %s", email)
+	} else if content := session.ContentFromContext(ctx); content != nil {
+		// Fallback check
+		if uVal, ok := content.Attributes["InboundUser"]; ok {
+			log.Printf("[XrayDispatcher] DispatchLink Found InboundUser in attributes: %T", uVal)
+		}
 	}
+
+	if email != "" {
+		limiter := d.tracker.GetLimiterForUser(email)
+		stats := GetXrayUserStats(email)
+
+		if limiter != nil || stats != nil {
+			log.Printf("[XrayDispatcher] Wrapping connection in DispatchLink for user: %s", email)
+
+			// Wrap things in place
+			if link.Reader != nil {
+				link.Reader = &RateLimitedReader{
+					Reader:  link.Reader,
+					limiter: limiter,
+					stats:   stats,
+				}
+			}
+			if link.Writer != nil {
+				link.Writer = &RateLimitedWriter{
+					Writer:  link.Writer,
+					limiter: limiter,
+					stats:   stats,
+				}
+			}
+		}
+	}
+
 	return d.Dispatcher.DispatchLink(ctx, dest, link)
 }
 
