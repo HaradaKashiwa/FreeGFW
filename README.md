@@ -23,6 +23,21 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 - 🔒 **自动 HTTPS**: 集成 Let's Encrypt，自动申请和续期 SSL 证书。
 - ⚡ **一键部署**: 支持 Docker 部署或直接运行二进制文件，开箱即用。
 
+### 📦 预设节点模板
+
+系统内置了以下多种开箱即用的配置模板，满足不同的网络环境与防封锁需求：
+
+| 模板名称 | 核心协议 | 传输载体 | 加密 / 伪装 |
+| :--- | :--- | :--- | :--- |
+| **VLESS+TCP+Reality+Vision** | VLESS | TCP | Reality + Vision |
+| **VLESS+XHTTP+Reality** | VLESS | XHTTP | Reality |
+| **VLESS+TCP+XTLS** | VLESS | TCP | XTLS |
+| **Hysteria2** | Hysteria2 | UDP | 基于 QUIC |
+| **NaiveProxy** | NaiveProxy | HTTPS | TLS |
+| **VMess+AEAD+TCP+TLS** | VMess | TCP | 传统 TLS |
+| **VMess+AEAD+TCP** | VMess | TCP | AEAD |
+| **Shadowsocks (AES-256-GCM)** | Shadowsocks| TCP | AES-256-GCM |
+
 ## 🚀 快速开始
 
 ### Docker 部署

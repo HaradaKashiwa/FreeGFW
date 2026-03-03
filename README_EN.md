@@ -23,6 +23,21 @@ FreeGFW aims to provide a simple, powerful proxy management system, making it ea
 - 🔒 **Auto HTTPS**: Integrated Let's Encrypt for automatic SSL certificate application and renewal.
 - ⚡ **One-Click Deployment**: Supports Docker deployment or direct binary execution, ready out of the box.
 
+### 📦 Preset Node Templates
+
+The system comes with the following out-of-the-box configuration templates to meet different network environments and anti-blocking needs:
+
+| Template Name | Core Protocol | Transport Layer | Encryption / Obfuscation |
+| :--- | :--- | :--- | :--- |
+| **VLESS+TCP+Reality+Vision** | VLESS | TCP | Reality + Vision |
+| **VLESS+XHTTP+Reality** | VLESS | XHTTP | Reality |
+| **VLESS+TCP+XTLS** | VLESS | TCP | XTLS |
+| **Hysteria2** | Hysteria2 | UDP | QUIC-based |
+| **NaiveProxy** | NaiveProxy | HTTPS | TLS |
+| **VMess+AEAD+TCP+TLS** | VMess | TCP | Traditional TLS |
+| **VMess+AEAD+TCP** | VMess | TCP | AEAD |
+| **Shadowsocks (AES-256-GCM)** | Shadowsocks| TCP | AES-256-GCM |
+
 ## 🚀 Quick Start
 
 ### Docker Deployment
