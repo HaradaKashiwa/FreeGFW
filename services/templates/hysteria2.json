@@ -1,6 +1,5 @@
 {
     "_name": "Hysteria2",
-    "_description": "Hysteria2 协议",
     "server": {
         "type": "hysteria2",
         "listen": "::",

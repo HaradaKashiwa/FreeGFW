@@ -1,6 +1,5 @@
 {
     "_name": "Vmess TCP AEAD",
-    "_description": "Vmess TCP AEAD 协议。",
     "server": {
         "type": "vmess",
         "listen": "::",

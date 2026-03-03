@@ -43,13 +43,11 @@ func CreateTemplate(c *gin.Context) {
 	templateName := "custom-" + time.Now().Format("20060102150405")
 
 	name, _ := template["_name"].(string)
-	description, _ := template["_description"].(string)
 
 	newTemplate := models.Template{
-		Slug:        templateName,
-		Name:        name,
-		Description: description,
-		Content:     models.JSON([]byte(payload.Data)),
+		Slug:    templateName,
+		Name:    name,
+		Content: models.JSON([]byte(payload.Data)),
 	}
 
 	if err := database.DB.Create(&newTemplate).Error; err != nil {

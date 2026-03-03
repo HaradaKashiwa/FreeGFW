@@ -26,17 +26,15 @@ import (
 )
 
 type TemplateInfo struct {
-	Type        string `json:"type"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Type string `json:"type"`
+	Name string `json:"name"`
 }
 
 type TemplateConfig struct {
-	Name        string                 `json:"_name"`
-	Description string                 `json:"_description"`
-	Core        interface{}            `json:"_core"`
-	Server      map[string]interface{} `json:"server"`
-	Client      map[string]interface{} `json:"client"`
+	Name   string                 `json:"_name"`
+	Core   interface{}            `json:"_core"`
+	Server map[string]interface{} `json:"server"`
+	Client map[string]interface{} `json:"client"`
 }
 
 // GetIPv4 fetches public IPv4
@@ -123,10 +121,9 @@ func MigrateTemplates() {
 				var t TemplateConfig
 				if json.Unmarshal(content, &t) == nil {
 					database.DB.Create(&models.Template{
-						Slug:        slug,
-						Name:        t.Name,
-						Description: t.Description,
-						Content:     models.JSON(content),
+						Slug:    slug,
+						Name:    t.Name,
+						Content: models.JSON(content),
 					})
 					log.Println("Migrated template:", slug)
 				}
@@ -167,9 +164,8 @@ func GetTemplates() ([]TemplateInfo, error) {
 		}
 
 		list = append(list, TemplateInfo{
-			Type:        t.Slug,
-			Name:        t.Name,
-			Description: t.Description,
+			Type: t.Slug,
+			Name: t.Name,
 		})
 	}
 	return list, nil

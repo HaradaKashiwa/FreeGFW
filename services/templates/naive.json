@@ -1,6 +1,5 @@
 {
     "_name": "NaiveProxy",
-    "_description": "NaiveProxy 协议。",
     "_core": "singbox",
     "server": {
         "type": "naive",

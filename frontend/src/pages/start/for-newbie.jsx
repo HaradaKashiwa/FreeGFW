@@ -29,14 +29,13 @@ export function ForNewbie() {
                         'outline outline-2 outline-primary rounded-lg z-1000': templateType === i.type
                     })} onClick={() => setTemplateType(i.type)}>
                         <div>{i.name}</div>
-                        <div className='text-sm mt-1 opacity-70'>{i.description}</div>
-                        {templateType === i.type && <IoCheckmarkCircleSharp className='text-primary absolute right-3 top-3 text-2xl' />}
+                        {templateType === i.type && <IoCheckmarkCircleSharp className='text-primary absolute right-3 top-4 text-2xl' />}
                     </div>
                 ))}
             </div>
             <div className='mt-8 flex justify-between'>
                 <Button variant='outline' className='cursor-pointer' onClick={() => setStep('select-user-type')}>返回</Button>
-                <Button disabled={initTemplateLoading} className='cursor-pointer' onClick={async() => {
+                <Button disabled={initTemplateLoading} className='cursor-pointer' onClick={async () => {
                     await initTemplate({ type: templateType })
                     navigate('/')
                 }}>部署 {initTemplateLoading ? <PiSpinnerGap className='animate-spin' /> : <IoArrowForwardSharp />}</Button>

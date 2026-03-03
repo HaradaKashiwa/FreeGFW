@@ -1,6 +1,5 @@
 {
     "_name": "Vmess TCP AEAD TLS",
-    "_description": "Vmess TCP AEAD TLS 协议。",
     "server": {
         "type": "vmess",
         "listen": "::",
