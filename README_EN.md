@@ -40,6 +40,14 @@ The system comes with the following out-of-the-box configuration templates to me
 
 ## 🚀 Quick Start
 
+### One-Click Installation Script (Recommended)
+
+Automatically install Docker and deploy the FreeGFW container. It will show the server IP upon successful deployment.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/haradakashiwa/freegfw/main/install.sh | sudo bash
+```
+
 ### Docker Deployment
 
 ```bash
