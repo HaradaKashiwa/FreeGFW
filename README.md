@@ -42,7 +42,7 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 
 ### 一键安装脚本 (推荐)
 
-自动安装 Docker 并部署 FreeGFW 容器，部署完成后会显示服务器 IP 和随机管理密码。
+自动安装 Docker 并部署 FreeGFW 容器，部署完成后会显示管理地址。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/haradakashiwa/freegfw/main/install.sh | bash
