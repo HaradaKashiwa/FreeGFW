@@ -82,6 +82,7 @@
     "ssl_le_desc": "Configure SSL certificate to encrypt your connection, otherwise your connection information may be stolen.",
     "email": "Email",
     "email_desc": "Used for Let's Encrypt to receive certificate expiration reminders.",
+    "email_placeholder": "Enter your email address",
     "skip_encryption": "Skip Encryption",
     "confirm_skip_encryption": "Confirm skip encryption?",
     "skip_warning_desc": "Skipping encryption may lead to information leakage due to potential government or man-in-the-middle attacks. Skipping encryption will disable TLS supported protocols.",

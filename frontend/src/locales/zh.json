@@ -82,6 +82,7 @@
     "ssl_le_desc": "配置 SSL 证书以加密你的连接，如未配置您的连接信息可能会被窃取。",
     "email": "邮箱 (Email)",
     "email_desc": "用于注册Let's Encrypt接收证书过期提醒。",
+    "email_placeholder": "请输入你的邮箱地址",
     "skip_encryption": "跳过加密",
     "confirm_skip_encryption": "确认跳过加密？",
     "skip_warning_desc": "跳过加密可能会收到政府或中间人攻击，导致信息泄漏。跳过加密将无法使用支持TLS的协议。",
