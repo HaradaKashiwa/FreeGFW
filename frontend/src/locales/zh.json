@@ -81,7 +81,7 @@
     "configure_ssl_le": "配置 SSL (Let's Encrypt)",
     "ssl_le_desc": "配置 SSL 证书以加密你的连接，如未配置您的连接信息可能会被窃取。",
     "email": "邮箱 (Email)",
-    "email_desc": "用于注册Let's Encrypt接收证书过期提醒。",
+    "email_desc": "用于注册Let's Encrypt接收证书过期提醒，担心隐私问题可以随意填写。",
     "email_placeholder": "请输入你的邮箱地址",
     "skip_encryption": "跳过加密",
     "confirm_skip_encryption": "确认跳过加密？",

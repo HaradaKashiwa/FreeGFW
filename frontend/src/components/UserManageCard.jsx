@@ -25,17 +25,33 @@ const MBPS = 125000
 function UserRow({ user, refresh, setQrCodeUser, setPreDeleteUser, formatBytes }) {
     const { t } = useLanguageStore()
     const { trigger: updateUser, loading: updateLoading } = useUpdateUser({ id: user.id })
-    const [isEditing, setIsEditing] = useState(false)
+    const [isEditingLimit, setIsEditingLimit] = useState(false)
+    const [isEditingName, setIsEditingName] = useState(false)
     const [limit, setLimit] = useState(user.speedLimit ? user.speedLimit / MBPS : 0)
+    const [username, setUsername] = useState(user.username)
 
     useEffect(() => {
         setLimit(user.speedLimit ? user.speedLimit / MBPS : 0)
     }, [user.speedLimit])
 
-    const handleSave = async () => {
+    useEffect(() => {
+        setUsername(user.username)
+    }, [user.username])
+
+    const handleSaveLimit = async () => {
         try {
             await updateUser({ speedLimit: Math.floor(limit * MBPS) })
-            setIsEditing(false)
+            setIsEditingLimit(false)
+            refresh()
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    const handleSaveName = async () => {
+        try {
+            await updateUser({ username: username })
+            setIsEditingName(false)
             refresh()
         } catch (e) {
             console.error(e)
@@ -46,8 +62,28 @@ function UserRow({ user, refresh, setQrCodeUser, setPreDeleteUser, formatBytes }
         <div className='flex items-center gap-4 p-4 border-b last:border-b-0'>
             <div className='flex-1 flex items-center gap-4'>
                 <img src={`https://avatar.vercel.sh/${user.username}`} className='w-8 h-8 rounded-full' />
-                <div>
-                    <div>{user.username}</div>
+                <div className='flex-1'>
+                    {isEditingName ? (
+                        <div className="flex items-center gap-1">
+                            <Input
+                                type="text"
+                                className="h-7 w-28 text-xs"
+                                value={username}
+                                onChange={e => setUsername(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') handleSaveName()
+                                }}
+                                autoFocus
+                            />
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveName} disabled={updateLoading}>
+                                {updateLoading ? <PiSpinner className="animate-spin" /> : <IoCheckmark />}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="cursor-pointer hover:underline truncate" onClick={() => setIsEditingName(true)}>
+                            {user.username}
+                        </div>
+                    )}
                 </div>
             </div>
             <div className='flex-1 text-xs opacity-70 flex flex-col justify-center'>
@@ -55,7 +91,7 @@ function UserRow({ user, refresh, setQrCodeUser, setPreDeleteUser, formatBytes }
                 <div dir="ltr">↓ {formatBytes(user.download || 0)}</div>
             </div>
             <div className='flex-1 text-xs opacity-70 flex items-center h-8'>
-                {isEditing ? (
+                {isEditingLimit ? (
                     <div className="flex items-center gap-1">
                         <Input
                             type="number"
@@ -63,16 +99,16 @@ function UserRow({ user, refresh, setQrCodeUser, setPreDeleteUser, formatBytes }
                             value={limit}
                             onChange={e => setLimit(e.target.value)}
                             onKeyDown={e => {
-                                if (e.key === 'Enter') handleSave()
+                                if (e.key === 'Enter') handleSaveLimit()
                             }}
                             autoFocus
                         />
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave} disabled={updateLoading}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveLimit} disabled={updateLoading}>
                             {updateLoading ? <PiSpinner className="animate-spin" /> : <IoCheckmark />}
                         </Button>
                     </div>
                 ) : (
-                    <div className="cursor-pointer hover:underline" onClick={() => setIsEditing(true)}>
+                    <div className="cursor-pointer hover:underline" onClick={() => setIsEditingLimit(true)}>
                         {user.speedLimit ? (user.speedLimit / MBPS).toFixed(2) + ' Mbps' : '∞'}
                     </div>
                 )}

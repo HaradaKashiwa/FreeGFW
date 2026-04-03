@@ -68,8 +68,9 @@ func AddUsers(c *gin.Context) {
 		if err := core.Refresh(); err != nil {
 			log.Println("Failed to refresh core:", err)
 		}
-		if err := core.Restart(); err != nil {
-			log.Println("Failed to restart core:", err)
+		if err := core.HotReloadUsers(); err != nil {
+			log.Println("Hot reload failed, fallback to restart:", err)
+			core.Restart()
 		}
 	} else {
 		log.Println("Invalid payload: count or title missing")
@@ -110,7 +111,10 @@ func UpdateUser(c *gin.Context) {
 
 	core := services.NewCoreService()
 	core.Refresh()
-	core.Restart()
+	if err := core.HotReloadUsers(); err != nil {
+		log.Println("Hot reload failed, fallback to restart:", err)
+		core.Restart()
+	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
@@ -126,7 +130,10 @@ func DeleteUser(c *gin.Context) {
 	database.DB.Delete(&models.User{}, id)
 	core := services.NewCoreService()
 	core.Refresh()
-	core.Restart()
+	if err := core.HotReloadUsers(); err != nil {
+		log.Println("Hot reload failed, fallback to restart:", err)
+		core.Restart()
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
