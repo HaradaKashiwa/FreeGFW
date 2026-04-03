@@ -35,6 +35,7 @@ The system comes with the following out-of-the-box configuration templates to me
 | **Hysteria2** | Hysteria2 | UDP | QUIC-based |
 | **NaiveProxy** | NaiveProxy | HTTPS | TLS |
 | **VMess+AEAD+TCP+TLS** | VMess | TCP | Traditional TLS |
+| **VMess+AEAD+WS+TLS** | VMess | WebSocket | Traditional TLS |
 | **VMess+AEAD+TCP** | VMess | TCP | AEAD |
 | **Shadowsocks (AES-256-GCM)** | Shadowsocks| TCP | AES-256-GCM |
 

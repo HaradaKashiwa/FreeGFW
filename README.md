@@ -35,6 +35,7 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 | **Hysteria2** | Hysteria2 | UDP | 基于 QUIC |
 | **NaiveProxy** | NaiveProxy | HTTPS | TLS |
 | **VMess+AEAD+TCP+TLS** | VMess | TCP | 传统 TLS |
+| **VMess+AEAD+WS+TLS** | VMess | WebSocket | 传统 TLS |
 | **VMess+AEAD+TCP** | VMess | TCP | AEAD |
 | **Shadowsocks (AES-256-GCM)** | Shadowsocks| TCP | AES-256-GCM |
 
