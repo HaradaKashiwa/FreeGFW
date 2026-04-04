@@ -11,6 +11,7 @@ import (
 	"freegfw/services"
 	"freegfw/utils"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -134,6 +135,27 @@ func SwapLink(c *gin.Context) {
 				l.ID = existing.ID
 			}
 			database.DB.Save(&l)
+
+			// Rebuild and restart the running core so that the synced remote
+			// users (now stored in Link.Users) are injected into the inbound's
+			// user list. Without this, the remote peer's UUIDs stay only in
+			// the DB and the running Xray/sing-box keeps rejecting them with
+			// "invalid request user id" until the container restarts.
+			//
+			// Note: BindLink on the receiving peer doesn't need this because
+			// it creates the Link with status='pending' and relies on
+			// StartSyncLoop, which fires Refresh()+Start() on the first
+			// successful sync. SwapLink writes status='success' directly, so
+			// the sync loop's etag-match path never triggers a restart.
+			core := services.NewCoreService()
+			if err := core.Refresh(); err != nil {
+				log.Println("Failed to refresh core after link swap:", err)
+			}
+			if err := core.HotReloadUsers(); err != nil {
+				log.Println("Hot reload failed after link swap, falling back to restart:", err)
+				core.Restart()
+			}
+
 			c.JSON(http.StatusOK, gin.H{"success": true})
 			return
 		}
