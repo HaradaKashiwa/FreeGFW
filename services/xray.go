@@ -197,18 +197,79 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 
 	stats := map[string]interface{}{}
 
+	outbounds := []interface{}{}
+	var warpEnabledSetting models.Setting
+	database.DB.Where("key = ?", "warp_enabled").Limit(1).Find(&warpEnabledSetting)
+	
+	warpEnabled := false
+	if len(warpEnabledSetting.Value) > 0 {
+		json.Unmarshal(warpEnabledSetting.Value, &warpEnabled)
+	}
+
+	if warpEnabled {
+		var warpAccountSetting models.Setting
+		var warpAccount *WarpAccount
+		
+		database.DB.Where("key = ?", "warp_account").Limit(1).Find(&warpAccountSetting)
+		if len(warpAccountSetting.Value) > 0 {
+			var acc WarpAccount
+			if err := json.Unmarshal(warpAccountSetting.Value, &acc); err == nil {
+				warpAccount = &acc
+			}
+		}
+
+		if warpAccount == nil || warpAccount.PrivateKey == "" {
+			// Auto register
+			log.Println("Auto-registering Cloudflare WARP account for Xray...")
+			acc, err := RegisterWarp()
+			if err != nil {
+				log.Println("Failed to register warp:", err)
+				outbounds = append(outbounds, map[string]interface{}{"protocol": "freedom"})
+			} else {
+				warpAccount = acc
+				accBytes, _ := json.Marshal(acc)
+				if warpAccountSetting.Key == "" {
+					warpAccountSetting.Key = "warp_account"
+				}
+				warpAccountSetting.Value = accBytes
+				database.DB.Save(&warpAccountSetting)
+			}
+		}
+
+		if warpAccount != nil && warpAccount.PrivateKey != "" {
+			outbounds = append(outbounds, map[string]interface{}{
+				"protocol": "wireguard",
+				"tag":      "direct",
+				"settings": map[string]interface{}{
+					"secretKey": warpAccount.PrivateKey,
+					"address": []string{
+						warpAccount.LocalAddressV4,
+						warpAccount.LocalAddressV6,
+					},
+					"domainStrategy": "UseIPv4",
+					"peers": []interface{}{
+						map[string]interface{}{
+							"publicKey": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+							"endpoint":  "engage.cloudflareclient.com:2408",
+						},
+					},
+					"reserved": warpAccount.Reserved,
+					"mtu":      1280,
+				},
+			})
+		}
+	} else {
+		outbounds = append(outbounds, map[string]interface{}{"protocol": "freedom"})
+	}
+
 	config := map[string]interface{}{
 		"log": map[string]interface{}{
 			"loglevel": "info",
 		},
-		"stats":    stats,
-		"policy":   policy,
-		"inbounds": []interface{}{inbound},
-		"outbounds": []interface{}{
-			map[string]interface{}{
-				"protocol": "freedom",
-			},
-		},
+		"stats":     stats,
+		"policy":    policy,
+		"inbounds":  []interface{}{inbound},
+		"outbounds": outbounds,
 	}
 
 	data, _ := json.MarshalIndent(config, "", "  ")

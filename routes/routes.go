@@ -115,6 +115,14 @@ func SetupRouter(staticFS fs.FS) *gin.Engine {
 		authorized.StaticFileFS("/logo.svg", "logo.svg", http.FS(staticFS))
 
 		if assetsFS, err := fs.Sub(staticFS, "assets"); err == nil {
+			authorized.Use(func(c *gin.Context) {
+				if strings.HasPrefix(c.Request.URL.Path, "/assets/") || strings.HasPrefix(c.Request.URL.Path, "/images/") {
+					c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+					c.Writer.Header().Set("Pragma", "no-cache")
+					c.Writer.Header().Set("Expires", "0")
+				}
+				c.Next()
+			})
 			authorized.StaticFS("/assets", http.FS(assetsFS))
 		}
 		if imagesFS, err := fs.Sub(staticFS, "images"); err == nil {
@@ -123,6 +131,9 @@ func SetupRouter(staticFS fs.FS) *gin.Engine {
 
 		// Serve index for root
 		authorized.GET("/", func(c *gin.Context) {
+			c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+			c.Writer.Header().Set("Pragma", "no-cache")
+			c.Writer.Header().Set("Expires", "0")
 			c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
 		})
 	}
@@ -140,6 +151,9 @@ func SetupRouter(staticFS fs.FS) *gin.Engine {
 			return
 		}
 		// Otherwise serve index.html for SPA
+		c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Writer.Header().Set("Pragma", "no-cache")
+		c.Writer.Header().Set("Expires", "0")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
 	})
 

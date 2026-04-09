@@ -12,7 +12,7 @@ docker:
 	docker save freegfw:latest > dist/freegfw.tar
 
 run:
-	go run -tags with_utls,with_quic,with_clash_api .
+	go run -tags with_utls,with_quic,with_clash_api,with_wireguard,with_gvisor .
 
 build:
-	go build -tags with_utls,with_quic,with_clash_api -o freegfw .
+	go build -tags with_utls,with_quic,with_clash_api,with_wireguard,with_gvisor -o freegfw .

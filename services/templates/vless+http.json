@@ -1,0 +1,22 @@
+{
+    "_name": "VLESS XHTTP CDN",
+    "_core": "xray",
+    "server": {
+        "type": "vless",
+        "listen": "::",
+        "listen_port": 80,
+        "transport": {
+            "type": "xhttp",
+            "path": "/robots.txt"
+        }
+    },
+    "client": {
+        "type": "vless",
+        "server_port": 80,
+        "server": "127.0.0.1",
+        "transport": {
+            "type": "xhttp",
+            "path": "/robots.txt"
+        }
+    }
+}

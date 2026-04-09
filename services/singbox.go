@@ -75,11 +75,68 @@ func (c *CoreService) refreshSingbox(server map[string]interface{}, templateName
 		}
 	}
 
+	outbounds := []map[string]interface{}{}
+	var warpEnabledSetting models.Setting
+	database.DB.Where("key = ?", "warp_enabled").Limit(1).Find(&warpEnabledSetting)
+	
+	warpEnabled := false
+	if len(warpEnabledSetting.Value) > 0 {
+		json.Unmarshal(warpEnabledSetting.Value, &warpEnabled)
+	}
+
+	if warpEnabled {
+		var warpAccountSetting models.Setting
+		var warpAccount *WarpAccount
+		
+		database.DB.Where("key = ?", "warp_account").Limit(1).Find(&warpAccountSetting)
+		if len(warpAccountSetting.Value) > 0 {
+			var acc WarpAccount
+			if err := json.Unmarshal(warpAccountSetting.Value, &acc); err == nil {
+				warpAccount = &acc
+			}
+		}
+
+		if warpAccount == nil || warpAccount.PrivateKey == "" {
+			// Auto register
+			log.Println("Auto-registering Cloudflare WARP account...")
+			acc, err := RegisterWarp()
+			if err != nil {
+				log.Println("Failed to register warp:", err)
+				// fallback to direct
+				outbounds = append(outbounds, map[string]interface{}{"type": "direct", "tag": "direct"})
+			} else {
+				warpAccount = acc
+				accBytes, _ := json.Marshal(acc)
+				if warpAccountSetting.Key == "" {
+					warpAccountSetting.Key = "warp_account"
+				}
+				warpAccountSetting.Value = accBytes
+				database.DB.Save(&warpAccountSetting)
+			}
+		}
+
+		if warpAccount != nil && warpAccount.PrivateKey != "" {
+			outbounds = append(outbounds, map[string]interface{}{
+				"type": "wireguard",
+				"tag": "direct", // keep tag direct because inbounds route to "direct"
+				"server": "engage.cloudflareclient.com",
+				"server_port": 2408,
+				"local_address": []string{warpAccount.LocalAddressV4, warpAccount.LocalAddressV6},
+				"private_key": warpAccount.PrivateKey,
+				"peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=", // Default WARP peer public key
+				"reserved": warpAccount.Reserved,
+				"mtu": 1280,
+				"domain_strategy": "prefer_ipv4",
+			})
+		}
+
+	} else {
+		outbounds = append(outbounds, map[string]interface{}{"type": "direct", "tag": "direct"})
+	}
+
 	config := map[string]interface{}{
 		"inbounds": []map[string]interface{}{server},
-		"outbounds": []map[string]interface{}{
-			{"type": "direct", "tag": "direct"},
-		},
+		"outbounds": outbounds,
 		"experimental": map[string]interface{}{
 			"clash_api": map[string]interface{}{
 				"external_controller": "127.0.0.1:0",

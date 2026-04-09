@@ -51,6 +51,13 @@ func GetConfigs(c *gin.Context) {
 		json.Unmarshal(serverSettings.Value, &serverObj)
 	}
 
+	var warpEnabledSettings models.Setting
+	database.DB.Where("key = ?", "warp_enabled").Limit(1).Find(&warpEnabledSettings)
+	warpEnabled := false
+	if len(warpEnabledSettings.Value) > 0 {
+		json.Unmarshal(warpEnabledSettings.Value, &warpEnabled)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"server":       serverObj,
 		"title":        title,
@@ -60,6 +67,7 @@ func GetConfigs(c *gin.Context) {
 		"ipv6":         ipv6,
 		"has_password": hasPassword,
 		"ssl":          ssl,
+		"warp_enabled": warpEnabled,
 	})
 }
 
@@ -70,7 +78,7 @@ func UpdateConfig(c *gin.Context) {
 		return
 	}
 
-	allowed := []string{"username", "password", "title"}
+	allowed := []string{"username", "password", "title", "warp_enabled"}
 	for _, key := range allowed {
 		if val, ok := payload[key]; ok {
 			jsonVal, _ := json.Marshal(val) // Handle null/empty logic
