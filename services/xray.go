@@ -246,7 +246,7 @@ func (c *CoreService) refreshXray(server map[string]interface{}, templateName st
 						warpAccount.LocalAddressV4,
 						warpAccount.LocalAddressV6,
 					},
-					"domainStrategy": "UseIPv4",
+					"domainStrategy": "ForceIPv4",
 					"peers": []interface{}{
 						map[string]interface{}{
 							"publicKey": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
