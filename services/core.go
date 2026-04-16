@@ -227,6 +227,12 @@ func (c *CoreService) Start() error {
 										return
 									}
 
+									// Skip mux.Server to prevent hard-cast panic in Xray (s.dispatcher.(*dispatcher.DefaultDispatcher))
+									if vH.Type().Name() == "Server" && vH.Type().PkgPath() == "github.com/xtls/xray-core/common/mux" {
+										log.Println("[Core] Skipping recursive update for mux.Server to avoid DispatchLink panic")
+										return
+									}
+
 									for k := 0; k < vH.NumField(); k++ {
 										f := vH.Field(k)
 										fType := f.Type()
