@@ -17,6 +17,7 @@ FreeGFW 的目标是提供一个简单易用、功能强大的代理服务管理
 
 - 🚀 **高性能核心**: 基于 [Sing-box](https://github.com/sagernet/sing-box) 和 [Xray](https://github.com/XTLS/Xray-core) 构建，支持最新的代理协议和特性。
 - 🌐 **多协议支持**: 原生支持 VLESS (Reality/Vision), VMess, Shadowsocks, Hysteria2 等主流协议。
+- ☁️ **一键集成 WARP**: 内置 Cloudflare WARP 一键配置，轻松解锁 ChatGPT 等受限服务，解决 IP 纯净度烦恼。
 - 🖥️ **现代化仪表盘**: 内置 React + TailwindCSS 构建的 Web 管理界面，操作直观便捷。
 - 👥 **用户管理**: 支持多用户系统，可为不同用户分配独立的配置。
 - 📊 **流量监控**: 实时监控服务器的上传/下载速度，以及用户的流量使用情况。

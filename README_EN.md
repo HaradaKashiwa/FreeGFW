@@ -17,6 +17,7 @@ FreeGFW aims to provide a simple, powerful proxy management system, making it ea
 
 - 🚀 **High Performance Core**: Built on [Sing-box](https://github.com/sagernet/sing-box) and [Xray](https://github.com/XTLS/Xray-core), supporting the latest proxy protocols and features.
 - 🌐 **Multi-Protocol Support**: Native support for VLESS (Reality/Vision), VMess, Shadowsocks, Hysteria2, etc.
+- ☁️ **Built-in WARP**: One-click Cloudflare WARP integration to easily unlock ChatGPT and resolve clean IP issues.
 - 🖥️ **Modern Dashboard**: Built-in Web management interface built with React + TailwindCSS, intuitive and convenient.
 - 👥 **User Management**: Supports multi-user system, assigning independent configurations for different users.
 - 📊 **Traffic Monitoring**: Real-time monitoring of server upload/download speeds and user traffic usage.
