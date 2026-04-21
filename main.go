@@ -99,6 +99,12 @@ func main() {
 			if err := srv.Shutdown(ctx); err != nil {
 				log.Println("Server shutdown error:", err)
 			}
+			
+			core := services.NewCoreService()
+			if core.IsRunning() {
+				core.Refresh()
+				core.Start()
+			}
 			// Loop continues, recreating router and server
 		}
 	}
