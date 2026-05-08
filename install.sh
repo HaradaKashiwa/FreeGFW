@@ -31,6 +31,11 @@ fi
 
 # Deploy FreeGFW using Docker
 echo -e "${YELLOW}Deploying FreeGFW...${NC}"
+
+# Pull the latest image
+echo -e "${YELLOW}Pulling the latest FreeGFW image...${NC}"
+docker pull ghcr.io/haradakashiwa/freegfw
+
 # Remove existing container if it exists
 if docker ps -a --format '{{.Names}}' | grep -q "^freegfw$"; then
     echo -e "${YELLOW}Removing existing freegfw container...${NC}"
