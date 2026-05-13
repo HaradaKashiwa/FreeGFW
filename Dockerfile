@@ -14,7 +14,8 @@ RUN go mod download
 COPY ./ ./
 
 # Build the binary
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_CFLAGS="-D_LARGEFILE64_SOURCE" go build -tags with_utls,with_quic,with_clash_api,with_wireguard,with_gvisor -o /main .
+ARG TARGETARCH
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=${TARGETARCH:-amd64} CGO_CFLAGS="-D_LARGEFILE64_SOURCE" go build -tags with_utls,with_quic,with_clash_api,with_wireguard,with_gvisor -o /main .
 
 # Final stage
 FROM alpine:latest
