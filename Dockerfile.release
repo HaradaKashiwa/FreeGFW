@@ -1,0 +1,15 @@
+FROM debian:stable-slim
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /
+
+ARG TARGETARCH
+COPY freegfw-linux-${TARGETARCH} /freegfw
+
+RUN chmod +x /freegfw
+
+EXPOSE 80
+EXPOSE 443
+
+CMD ["/freegfw"]
