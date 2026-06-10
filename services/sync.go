@@ -131,6 +131,13 @@ func syncOneLink(link *models.Link) (changed bool) {
 
 	// ETag unchanged, no update needed
 	if link.ETag != nil && *link.ETag == data.ETag {
+		if link.LastSyncStatus != "success" {
+			database.DB.Model(link).Updates(map[string]interface{}{
+				"last_sync_status": "success",
+				"last_sync_at":     time.Now().Unix(),
+				"error":            nil,
+			})
+		}
 		return false
 	}
 
