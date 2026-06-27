@@ -1,0 +1,25 @@
+{
+    "_name": "AnyTLS",
+    "_core": "singbox",
+    "server": {
+        "type": "anytls",
+        "listen": "::",
+        "listen_port": 443,
+        "tls": {
+            "enabled": true
+        }
+    },
+    "client": {
+        "type": "anytls",
+        "server_port": 443,
+        "server": "127.0.0.1",
+        "min_idle_session": 1,
+        "tls": {
+            "enabled": true,
+            "utls": {
+                "enabled": true,
+                "fingerprint": "chrome"
+            }
+        }
+    }
+}

@@ -417,6 +417,17 @@ h1 { font-size: 1.5rem; margin-bottom: 2rem; color: #1a1a1a; font-weight: 700; }
 		case "naive":
 			b64Data := base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s@%s:%s", user.Username, uuid, hostname, port)))
 			link = fmt.Sprintf("http2://%s?padding=1&method=auto&peer=%s#%s", b64Data, serverName, titleAlias)
+
+		case "anytls":
+			params := []string{}
+			if isTLS && serverName != "" {
+				params = append(params, "sni="+url.QueryEscape(serverName))
+			}
+			query := ""
+			if len(params) > 0 {
+				query = "?" + strings.Join(params, "&")
+			}
+			link = fmt.Sprintf("anytls://%s@%s:%s%s#%s", url.QueryEscape(uuid), hostname, port, query, titleAlias)
 		}
 		return link
 	}

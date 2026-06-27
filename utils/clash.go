@@ -156,6 +156,15 @@ func ToClashProxy(server map[string]interface{}, ip, port, uuid, title string) m
 			proxy["alpn"] = []string{"h3"}
 		}
 
+	case "anytls":
+		proxy["type"] = "anytls"
+		proxy["password"] = uuid
+		proxy["client-fingerprint"] = "chrome"
+		proxy["udp"] = true
+		if isTLS && serverName != "" {
+			proxy["sni"] = serverName
+		}
+
 	default:
 		return nil
 	}
