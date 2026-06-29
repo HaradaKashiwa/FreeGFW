@@ -4,6 +4,8 @@ all: ui docker
 
 ui:
 	cd frontend && npm run build
+	rm -rf public
+	cp -R frontend/dist public
 
 docker:
 	@echo "Building Docker image..."

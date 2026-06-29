@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "publish": "vite build && cp -r dist/assets ../www/public"
+    "publish": "vite build && rm -rf ../public && cp -R dist ../public"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",

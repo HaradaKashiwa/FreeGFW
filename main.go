@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-//go:embed frontend/dist
+//go:embed public
 var distEmbed embed.FS
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 		core.Start()
 	}
 
-	distFS, err := fs.Sub(distEmbed, "frontend/dist")
+	distFS, err := fs.Sub(distEmbed, "public")
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +99,7 @@ func main() {
 			if err := srv.Shutdown(ctx); err != nil {
 				log.Println("Server shutdown error:", err)
 			}
-			
+
 			core := services.NewCoreService()
 			if core.IsRunning() {
 				core.Refresh()
