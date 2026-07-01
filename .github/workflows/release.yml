@@ -38,6 +38,8 @@ jobs:
         run: |
           npm install
           npm run build
+          rm -rf ../public
+          cp -R dist ../public
 
       - name: Install cross-compiler
         if: matrix.goarch == 'arm64'
